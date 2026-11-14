@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wirenook radial-menu icon. Grid, stroke and colour rules: README.md beside this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>wirenook</title>
+  <defs>
+    <style>
+      .body, .soft, .glow, .warm { stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .body { fill: #d7fbff; }
+      .soft { fill: #b9a8ff; }
+      .glow { fill: #ff00e6; }
+      .warm { fill: #ff6600; }
+      .mark { fill: none; stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .dot { fill: #271452; }
+      .edge, .core { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+      .edge { stroke: #271452; stroke-width: 28; }
+      .core { stroke: #d7fbff; stroke-width: 12; }
+      .limb.edge { stroke-width: 38; }
+      .limb.core { stroke-width: 22; }
+      .core.soft { stroke: #b9a8ff; }
+      .core.glow { stroke: #ff00e6; }
+      .core.warm { stroke: #ff6600; }
+      .solid.edge { fill: #271452; stroke-width: 16; }
+      .solid.core { fill: #d7fbff; stroke: none; }
+      .solid.core.soft { fill: #b9a8ff; }
+      .solid.core.glow { fill: #ff00e6; }
+      .solid.core.warm { fill: #ff6600; }
+    </style>
+    <!-- The hard violet extrusion every icon shares: the silhouette swept 8 px down-right. -->
+    <filter id="extrude" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#6d2c95"/>
+      <feComposite in2="SourceAlpha" operator="in" result="silhouette"/>
+      <feOffset in="silhouette" dx="4" dy="4" result="near"/>
+      <feOffset in="silhouette" dx="8" dy="8" result="far"/>
+      <feMerge>
+        <feMergeNode in="far"/>
+        <feMergeNode in="near"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#extrude)">
+    <!-- The rabbit from the wirenook.net triangle logo (design/wirenook/logo/wirenook-tri.svg), scaled. -->
+    <path class="body" d="M 58.06,26.07 c -3.14 0.17 -5.04 2.52 -6.38 6.06 -2.72 7.18 -2.94 21.43 -2.14 31.66 0.80 10.23 1.81 16.62 5.35 25.40 3.54 8.78 10.74 19.48 16.32 26.13 4.52 5.38 12.09 11.36 14.82 13.45 -3.82 4.67 -6.41 8.85 -9.34 14.69 -2.92 5.85 -4.27 24.29 0.08 34.79 4.35 10.50 6.89 15.76 12.72 21.04 5.83 5.28 10.31 8.74 15.84 11.34 5.54 2.60 16.67 4.39 16.67 4.39 0.00 0.00 11.13 -1.79 16.67 -4.39 5.54 -2.60 10.02 -6.07 15.84 -11.34 5.83 -5.28 8.37 -10.54 12.72 -21.04 4.35 -10.50 3.00 -28.94 0.08 -34.79 -2.92 -5.85 -5.51 -10.03 -9.34 -14.69 2.73 -2.09 10.30 -8.07 14.82 -13.45 5.58 -6.65 12.79 -17.35 16.32 -26.13 3.54 -8.78 4.55 -15.17 5.35 -25.40 0.80 -10.23 0.57 -24.48 -2.14 -31.66 -1.78 -4.71 -4.58 -7.32 -9.95 -5.46 -5.37 1.86 -11.22 8.14 -17.74 15.23 -6.52 7.09 -13.05 16.04 -17.23 25.19 -4.18 9.15 -5.77 20.04 -7.59 28.85 -1.37 6.64 -2.70 16.83 -3.28 21.44 -7.35 -0.84 -14.53 -0.64 -14.53 -0.64 0.00 0.00 -7.18 -0.20 -14.53 0.64 -0.58 -4.61 -1.91 -14.80 -3.28 -21.44 -1.81 -8.81 -3.41 -19.70 -7.59 -28.85 -4.18 -9.15 -10.71 -18.10 -17.23 -25.19 -6.52 -7.09 -12.37 -13.37 -17.74 -15.23 -1.34 -0.46 -2.52 -0.65 -3.57 -0.59 z"/>
+  </g>
+</svg>

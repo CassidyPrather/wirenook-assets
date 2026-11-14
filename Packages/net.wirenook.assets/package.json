@@ -1,0 +1,19 @@
+{
+  "name": "net.wirenook.assets",
+  "displayName": "Wirenook Assets",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "Shared wirenook.net palette, materials, menu icons and sounds for VRChat avatar components.",
+  "author": {
+    "name": "Cassidy Prather",
+    "email": "cassidy@wirenook.net",
+    "url": "https://wirenook.net"
+  },
+  "license": "AGPL-3.0-or-later",
+  "vpmDependencies": {
+    "com.vrchat.avatars": "^3.10.6",
+    "nadena.dev.modular-avatar": "^1.18.7",
+    "jp.lilxyzw.liltoon": "^2.4.1"
+  },
+  "url": "https://github.com/CassidyPrather/wirenook-assets"
+}

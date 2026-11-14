@@ -1,0 +1,50 @@
+# The wirenook.net palette as a swatch texture; tools/palette.py bakes it.
+# Colours come from the site's own tokens (assets/themes/wirenook/01-tokens.css
+# in CassidyPrather/cassidyprather.github.io) and the palettes sampled on
+# https://wirenook.net/style/. Append rows and swatches freely; moving or
+# renaming one re-maps every model that already uses it.
+columns = 8
+cell = 16
+
+# Site tokens.
+[[row]]
+swatches = [
+  ["sky", "#5aa8dc"], ["ice", "#d7fbff"], ["cyan", "#73f4ff"], ["blue", "#365fc6"],
+  ["violet", "#6d2c95"], ["lavender", "#b9a8ff"], ["pink", "#ffd6f5"], ["magenta", "#ff00e6"],
+]
+
+[[row]]
+swatches = [
+  ["ink", "#271452"], ["banana", "#fff9b1"], ["panel", "#d8f7ff"], ["panel-strong", "#e7fcff"],
+  ["orange", "#ff6600"], ["signal-blue", "#0693fa"], ["paper", "#f7f7f7"], ["silver", "#c0c0c0"],
+]
+
+# Night and dark wallpapers.
+[[row]]
+swatches = [
+  ["night-0", "#0b0c25"], ["night-1", "#13153f"], ["night-2", "#15086a"], ["night-3", "#645e77"],
+  ["night-4", "#242949"], ["soot", "#1a1a1a"], ["cream", "#f3ecd5"], ["teal", "#50afc8"],
+]
+
+# Lightmode wallpapers, business wallpaper.
+[[row]]
+swatches = [
+  ["lilac-0", "#b0aed5"], ["lilac-1", "#898db8"], ["lilac-2", "#a88bbc"], ["lilac-3", "#7179a5"],
+  ["lilac-4", "#d7dae6"], ["mint", "#95fae6"], ["indigo", "#5f37be"], ["harbour", "#3288be"],
+]
+
+# Materials props are built from: neutral greys and warm woods and metals,
+# mixed to sit beside the tokens above.
+[[row]]
+swatches = [
+  ["grey-dark", "#3b3550"], ["grey-mid", "#7d7892"], ["grey-light", "#b8b4c8"], ["white", "#ffffff"],
+  ["wood", "#a9774d"], ["wood-dark", "#6f4a34"], ["brass", "#e0b65a"], ["leaf", "#6fcf8f"],
+]
+
+# Everything in this row glows: the emission mask is white here.
+[[row]]
+emissive = true
+swatches = [
+  ["glow-warm", "#ffd27a"], ["glow-cyan", "#73f4ff"], ["glow-magenta", "#ff00e6"], ["glow-white", "#ffffff"],
+  ["glow-red", "#ff3b3b"], ["glow-green", "#4dff7a"], ["glow-orange", "#ff8a3d"], ["glow-lavender", "#b9a8ff"],
+]

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wirenook radial-menu icon. Grid, stroke and colour rules: README.md beside this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>settings</title>
+  <defs>
+    <style>
+      .body, .soft, .glow, .warm { stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .body { fill: #d7fbff; }
+      .soft { fill: #b9a8ff; }
+      .glow { fill: #ff00e6; }
+      .warm { fill: #ff6600; }
+      .mark { fill: none; stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .dot { fill: #271452; }
+      .edge, .core { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+      .edge { stroke: #271452; stroke-width: 28; }
+      .core { stroke: #d7fbff; stroke-width: 12; }
+      .limb.edge { stroke-width: 38; }
+      .limb.core { stroke-width: 22; }
+      .core.soft { stroke: #b9a8ff; }
+      .core.glow { stroke: #ff00e6; }
+      .core.warm { stroke: #ff6600; }
+      .solid.edge { fill: #271452; stroke-width: 16; }
+      .solid.core { fill: #d7fbff; stroke: none; }
+      .solid.core.soft { fill: #b9a8ff; }
+      .solid.core.glow { fill: #ff00e6; }
+      .solid.core.warm { fill: #ff6600; }
+    </style>
+    <!-- The hard violet extrusion every icon shares: the silhouette swept 8 px down-right. -->
+    <filter id="extrude" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#6d2c95"/>
+      <feComposite in2="SourceAlpha" operator="in" result="silhouette"/>
+      <feOffset in="silhouette" dx="4" dy="4" result="near"/>
+      <feOffset in="silhouette" dx="8" dy="8" result="far"/>
+      <feMerge>
+        <feMergeNode in="far"/>
+        <feMergeNode in="near"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#extrude)">
+    <path class="body" d="M 105.7,53.9 L 107.7,27.1 L 136.3,27.1 L 138.3,53.9 L 158.6,62.3 L 179,44.8 L 199.2,65 L 181.7,85.4 L 190.1,105.7 L 216.9,107.7 L 216.9,136.3 L 190.1,138.3 L 181.7,158.6 L 199.2,179 L 179,199.2 L 158.6,181.7 L 138.3,190.1 L 136.3,216.9 L 107.7,216.9 L 105.7,190.1 L 85.4,181.7 L 65,199.2 L 44.8,179 L 62.3,158.6 L 53.9,138.3 L 27.1,136.3 L 27.1,107.7 L 53.9,105.7 L 62.3,85.4 L 44.8,65 L 65,44.8 L 85.4,62.3 Z M 92,122 a 30 30 0 1 0 60,0 a 30 30 0 1 0 -60,0 Z" fill-rule="evenodd"/>
+  </g>
+</svg>

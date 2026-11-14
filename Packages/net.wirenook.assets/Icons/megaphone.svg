@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wirenook radial-menu icon. Grid, stroke and colour rules: README.md beside this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>megaphone</title>
+  <defs>
+    <style>
+      .body, .soft, .glow, .warm { stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .body { fill: #d7fbff; }
+      .soft { fill: #b9a8ff; }
+      .glow { fill: #ff00e6; }
+      .warm { fill: #ff6600; }
+      .mark { fill: none; stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .dot { fill: #271452; }
+      .edge, .core { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+      .edge { stroke: #271452; stroke-width: 28; }
+      .core { stroke: #d7fbff; stroke-width: 12; }
+      .limb.edge { stroke-width: 38; }
+      .limb.core { stroke-width: 22; }
+      .core.soft { stroke: #b9a8ff; }
+      .core.glow { stroke: #ff00e6; }
+      .core.warm { stroke: #ff6600; }
+      .solid.edge { fill: #271452; stroke-width: 16; }
+      .solid.core { fill: #d7fbff; stroke: none; }
+      .solid.core.soft { fill: #b9a8ff; }
+      .solid.core.glow { fill: #ff00e6; }
+      .solid.core.warm { fill: #ff6600; }
+    </style>
+    <!-- The hard violet extrusion every icon shares: the silhouette swept 8 px down-right. -->
+    <filter id="extrude" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#6d2c95"/>
+      <feComposite in2="SourceAlpha" operator="in" result="silhouette"/>
+      <feOffset in="silhouette" dx="4" dy="4" result="near"/>
+      <feOffset in="silhouette" dx="8" dy="8" result="far"/>
+      <feMerge>
+        <feMergeNode in="far"/>
+        <feMergeNode in="near"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#extrude)">
+    <g transform="translate(-8 0) rotate(-14 122 122)">
+    <rect class="body" x="84" y="146" width="30" height="58" rx="10"/>
+    <polygon class="body" points="36,98 60,98 150,50 150,194 60,146 36,146"/>
+    <rect class="body" x="146" y="42" width="22" height="160" rx="10"/>
+    <path class="edge" d="M 192,122 H 214"/>
+    <path class="edge" d="M 188,84 L 208,70"/>
+    <path class="edge" d="M 188,160 L 208,174"/>
+    <path class="core glow" d="M 192,122 H 214"/>
+    <path class="core glow" d="M 188,84 L 208,70"/>
+    <path class="core glow" d="M 188,160 L 208,174"/>
+    </g>
+  </g>
+</svg>

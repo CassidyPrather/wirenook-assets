@@ -1,0 +1,393 @@
+{
+  "size": [
+    128,
+    128
+  ],
+  "cell": 16,
+  "swatches": {
+    "sky": {
+      "color": "#5aa8dc",
+      "uv": [
+        0.0625,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "ice": {
+      "color": "#d7fbff",
+      "uv": [
+        0.1875,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "cyan": {
+      "color": "#73f4ff",
+      "uv": [
+        0.3125,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "blue": {
+      "color": "#365fc6",
+      "uv": [
+        0.4375,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "violet": {
+      "color": "#6d2c95",
+      "uv": [
+        0.5625,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "lavender": {
+      "color": "#b9a8ff",
+      "uv": [
+        0.6875,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "pink": {
+      "color": "#ffd6f5",
+      "uv": [
+        0.8125,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "magenta": {
+      "color": "#ff00e6",
+      "uv": [
+        0.9375,
+        0.9375
+      ],
+      "emissive": false
+    },
+    "ink": {
+      "color": "#271452",
+      "uv": [
+        0.0625,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "banana": {
+      "color": "#fff9b1",
+      "uv": [
+        0.1875,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "panel": {
+      "color": "#d8f7ff",
+      "uv": [
+        0.3125,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "panel-strong": {
+      "color": "#e7fcff",
+      "uv": [
+        0.4375,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "orange": {
+      "color": "#ff6600",
+      "uv": [
+        0.5625,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "signal-blue": {
+      "color": "#0693fa",
+      "uv": [
+        0.6875,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "paper": {
+      "color": "#f7f7f7",
+      "uv": [
+        0.8125,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "silver": {
+      "color": "#c0c0c0",
+      "uv": [
+        0.9375,
+        0.8125
+      ],
+      "emissive": false
+    },
+    "night-0": {
+      "color": "#0b0c25",
+      "uv": [
+        0.0625,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "night-1": {
+      "color": "#13153f",
+      "uv": [
+        0.1875,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "night-2": {
+      "color": "#15086a",
+      "uv": [
+        0.3125,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "night-3": {
+      "color": "#645e77",
+      "uv": [
+        0.4375,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "night-4": {
+      "color": "#242949",
+      "uv": [
+        0.5625,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "soot": {
+      "color": "#1a1a1a",
+      "uv": [
+        0.6875,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "cream": {
+      "color": "#f3ecd5",
+      "uv": [
+        0.8125,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "teal": {
+      "color": "#50afc8",
+      "uv": [
+        0.9375,
+        0.6875
+      ],
+      "emissive": false
+    },
+    "lilac-0": {
+      "color": "#b0aed5",
+      "uv": [
+        0.0625,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "lilac-1": {
+      "color": "#898db8",
+      "uv": [
+        0.1875,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "lilac-2": {
+      "color": "#a88bbc",
+      "uv": [
+        0.3125,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "lilac-3": {
+      "color": "#7179a5",
+      "uv": [
+        0.4375,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "lilac-4": {
+      "color": "#d7dae6",
+      "uv": [
+        0.5625,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "mint": {
+      "color": "#95fae6",
+      "uv": [
+        0.6875,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "indigo": {
+      "color": "#5f37be",
+      "uv": [
+        0.8125,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "harbour": {
+      "color": "#3288be",
+      "uv": [
+        0.9375,
+        0.5625
+      ],
+      "emissive": false
+    },
+    "grey-dark": {
+      "color": "#3b3550",
+      "uv": [
+        0.0625,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "grey-mid": {
+      "color": "#7d7892",
+      "uv": [
+        0.1875,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "grey-light": {
+      "color": "#b8b4c8",
+      "uv": [
+        0.3125,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "white": {
+      "color": "#ffffff",
+      "uv": [
+        0.4375,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "wood": {
+      "color": "#a9774d",
+      "uv": [
+        0.5625,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "wood-dark": {
+      "color": "#6f4a34",
+      "uv": [
+        0.6875,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "brass": {
+      "color": "#e0b65a",
+      "uv": [
+        0.8125,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "leaf": {
+      "color": "#6fcf8f",
+      "uv": [
+        0.9375,
+        0.4375
+      ],
+      "emissive": false
+    },
+    "glow-warm": {
+      "color": "#ffd27a",
+      "uv": [
+        0.0625,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-cyan": {
+      "color": "#73f4ff",
+      "uv": [
+        0.1875,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-magenta": {
+      "color": "#ff00e6",
+      "uv": [
+        0.3125,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-white": {
+      "color": "#ffffff",
+      "uv": [
+        0.4375,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-red": {
+      "color": "#ff3b3b",
+      "uv": [
+        0.5625,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-green": {
+      "color": "#4dff7a",
+      "uv": [
+        0.6875,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-orange": {
+      "color": "#ff8a3d",
+      "uv": [
+        0.8125,
+        0.3125
+      ],
+      "emissive": true
+    },
+    "glow-lavender": {
+      "color": "#b9a8ff",
+      "uv": [
+        0.9375,
+        0.3125
+      ],
+      "emissive": true
+    }
+  }
+}
