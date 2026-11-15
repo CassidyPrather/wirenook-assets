@@ -40,6 +40,13 @@ with nothing to atlas.
   merge every prop into one mesh. `FeaturePrefab.Merge` leaves each scaled
   bone resting at the scale its layer starts it at, so props are hidden
   for viewers who block the avatar's animations too.
+- **`WirenookPlatform`** says which platform a build is for (the editor's
+  build target, or one a build is told to pretend), and the build plugin
+  turns the same prefab into an Android or iOS avatar: objects marked
+  `WirenookPcOnly` are left out with their parameters kept, hidden UV
+  tiles are cut from the mesh, materials become VRChat's mobile shaders,
+  and audio sources go. `FeaturePrefab.Describe(..., pcOnly: true)` marks
+  a feature that cannot work there.
 - **`ToonMaterial`** is the single lilToon configuration all materials
   start from: no minimum brightness, UV tile discard on the second UV set,
   and lilToon's Clipping Canceller switched on for the project.
