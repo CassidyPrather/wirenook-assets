@@ -134,6 +134,28 @@ namespace Wirenook.Assets.Editor
             return tree;
         }
 
+        /// <summary>
+        /// A direct blend tree: every child plays at once, each weighted by a
+        /// parameter. With children that animate different properties and a
+        /// weight parameter fixed at 1, it evaluates any number of independent
+        /// blend trees in a single layer.
+        /// </summary>
+        public BlendTree Direct(string name, string weightParameter, params Motion[] children)
+        {
+            var tree = new BlendTree
+            {
+                name = name,
+                blendType = BlendTreeType.Direct,
+                hideFlags = HideFlags.HideInHierarchy,
+            };
+            AssetDatabase.AddObjectToAsset(tree, _path);
+            foreach (var child in children) tree.AddChild(child);
+            var entries = tree.children;
+            for (var i = 0; i < entries.Length; i++) entries[i].directBlendParameter = weightParameter;
+            tree.children = entries;
+            return tree;
+        }
+
         internal T AddSubAsset<T>(T asset) where T : UnityEngine.Object
         {
             asset.hideFlags = HideFlags.HideInHierarchy;
