@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using nadena.dev.modular_avatar.core;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
@@ -69,7 +70,18 @@ namespace Wirenook.Assets.Editor
 
             foreach (Transform child in parent.transform)
             {
-                if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) == model) return child.gameObject;
+                if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) != model) continue;
+
+                // The last build left some bones resting at the scale their
+                // animator starts them at (see RestAtDefaults). A rebuild
+                // measures against the model as it was exported.
+                foreach (var part in child.GetComponentsInChildren<Transform>(true))
+                {
+                    var exported = PrefabUtility.GetCorrespondingObjectFromSource(part);
+                    if (exported != null) part.localScale = exported.localScale;
+                }
+
+                return child.gameObject;
             }
 
             return (GameObject)PrefabUtility.InstantiatePrefab(model, parent.transform);
@@ -137,6 +149,45 @@ namespace Wirenook.Assets.Editor
             merge.pathMode = MergeAnimatorPathMode.Relative;
             merge.matchAvatarWriteDefaults = true;
             merge.deleteAttachedAnimator = true;
+            if (controller is AnimatorController generated) RestAtDefaults(root, generated);
+        }
+
+        /// <summary>
+        /// Leaves every transform the controller scales resting at the scale
+        /// its layer's default state holds it at, so a prop that is toggled by
+        /// scale rests hidden.
+        ///
+        /// The animator would put it there on the first frame anyway, but not
+        /// everyone runs the animator: a viewer whose safety settings block an
+        /// avatar's animations sees it exactly as it rests, and so does
+        /// anything that renders the prefab without playing it.
+        /// </summary>
+        public static void RestAtDefaults(GameObject root, AnimatorController controller)
+        {
+            foreach (var layer in controller.layers)
+            {
+                var state = layer.stateMachine != null ? layer.stateMachine.defaultState : null;
+                if (state == null || !(state.motion is AnimationClip clip)) continue;
+
+                foreach (var binding in AnimationUtility.GetCurveBindings(clip))
+                {
+                    if (binding.type != typeof(Transform) ||
+                        !binding.propertyName.StartsWith("m_LocalScale.", StringComparison.Ordinal)) continue;
+                    var target = root.transform.Find(binding.path);
+                    if (target == null) continue;
+
+                    var value = AnimationUtility.GetEditorCurve(clip, binding).Evaluate(0f);
+                    var scale = target.localScale;
+                    switch (binding.propertyName[binding.propertyName.Length - 1])
+                    {
+                        case 'x': scale.x = value; break;
+                        case 'y': scale.y = value; break;
+                        case 'z': scale.z = value; break;
+                    }
+
+                    target.localScale = scale;
+                }
+            }
         }
 
         /// <summary>Declares the feature's expression parameters, replacing any previous declaration.</summary>

@@ -37,7 +37,9 @@ with nothing to atlas.
   Avatar wiring (merge animator, parameters, menu items, bone proxy).
 - **`PopToggle`** is the house toggle: a prop pops in with overshoot and
   shrinks away by scaling a bone. Renderers stay on, so an optimiser can
-  merge every prop into one mesh.
+  merge every prop into one mesh. `FeaturePrefab.Merge` leaves each scaled
+  bone resting at the scale its layer starts it at, so props are hidden
+  for viewers who block the avatar's animations too.
 - **`ToonMaterial`** is the single lilToon configuration all materials
   start from: no minimum brightness, UV tile discard on the second UV set,
   and lilToon's Clipping Canceller switched on for the project.
