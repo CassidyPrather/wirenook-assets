@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using UnityEditor;
@@ -14,10 +16,17 @@ namespace Wirenook.Assets.Editor
     /// This package's steps in the non-destructive avatar build. They run on
     /// the throwaway copy the build works on, never on the prefab.
     ///
-    /// The point of both steps is to let an optimiser merge meshes. It will
-    /// only merge renderers that are alike in every way it can see: the same
-    /// root bone, bounds and light-probe anchor, the same animated material
-    /// properties, and no component nearby that it does not recognise.
+    /// Joining props to the avatar's mesh is there to let an optimiser merge
+    /// meshes. It will only merge renderers that are alike in every way it
+    /// can see: the same root bone, bounds and light-probe anchor, the same
+    /// animated material properties, and no component nearby that it does
+    /// not recognise.
+    ///
+    /// The mobile steps turn the same prefab into something Android and iOS
+    /// accept. They run only when the build is for one of those (see
+    /// <see cref="WirenookPlatform"/>): objects marked PC-only are left out,
+    /// hidden UV tiles are cut out of the meshes, since no mobile shader can
+    /// discard them, and every material is replaced by a VRChat mobile one.
     /// </summary>
     public sealed class WirenookBuildPlugin : Plugin<WirenookBuildPlugin>
     {
@@ -33,12 +42,24 @@ namespace Wirenook.Assets.Editor
             public readonly List<SkinnedMeshRenderer> Props = new List<SkinnedMeshRenderer>();
         }
 
+        private const string MobileToon = "VRChat/Mobile/Toon Lit";
+        private const string MobileGlow = "VRChat/Mobile/Particles/Additive";
+
         protected override void Configure()
         {
+            var beforeModularAvatar = InPhase(BuildPhase.Resolving).BeforePlugin(ModularAvatar);
+
+            // Before Modular Avatar reads anything: what is removed here must
+            // contribute no menu, animator or object to the build.
+            beforeModularAvatar.Run("Leave PC-only objects out of mobile builds", context =>
+            {
+                if (WirenookPlatform.IsMobile) RemovePcOnly(context.AvatarRootObject);
+            });
+
             // Features are found by walking down from their marker, so this
             // has to happen first: Modular Avatar later moves hand-held props
             // out from under their feature and onto the hand bones.
-            InPhase(BuildPhase.Resolving).Run("Find props that join the avatar mesh", context =>
+            beforeModularAvatar.Run("Find props that join the avatar mesh", context =>
             {
                 var root = context.AvatarRootObject;
                 var features = root.GetComponentsInChildren<WirenookFeature>(true);
@@ -62,6 +83,12 @@ namespace Wirenook.Assets.Editor
             });
 
             var afterModularAvatar = InPhase(BuildPhase.Transforming).AfterPlugin(ModularAvatar);
+            afterModularAvatar.Run("Keep to what mobile builds may carry", context =>
+            {
+                if (!WirenookPlatform.IsMobile) return;
+                MobileMaterials(context.AvatarRootObject);
+                RemoveSound(context.AvatarRootObject);
+            });
             afterModularAvatar.WithRequiredExtension(typeof(AnimatorServicesContext), sequence =>
             {
                 sequence.Run("Join props to the avatar mesh", context =>
@@ -75,8 +102,150 @@ namespace Wirenook.Assets.Editor
             afterModularAvatar.Run("Remove editor-only markers", context =>
             {
                 foreach (var marker in context.AvatarRootObject.GetComponentsInChildren<IWirenookEditorOnly>(true))
-                    Object.DestroyImmediate((Component)marker);
+                    UnityEngine.Object.DestroyImmediate((Component)marker);
             });
+        }
+
+        /// <summary>
+        /// Removes every object marked <see cref="WirenookPcOnly"/>, leaving
+        /// in its place an empty object that declares the same expression
+        /// parameters. VRChat syncs parameters by their position in the
+        /// list, so the list has to come out the same on every platform even
+        /// when what the parameters drive does not exist on this one.
+        /// </summary>
+        private static void RemovePcOnly(GameObject avatar)
+        {
+            foreach (var marker in avatar.GetComponentsInChildren<WirenookPcOnly>(true))
+            {
+                // Already gone with a marked ancestor.
+                if (marker == null || marker.gameObject == avatar) continue;
+                var target = marker.gameObject;
+                var declared = target.GetComponentsInChildren<ModularAvatarParameters>(true)
+                    .SelectMany(component => component.parameters)
+                    .ToList();
+                if (declared.Count > 0)
+                {
+                    var stand = new GameObject(target.name);
+                    stand.transform.SetParent(target.transform.parent, false);
+                    stand.transform.SetSiblingIndex(target.transform.GetSiblingIndex());
+                    stand.AddComponent<ModularAvatarParameters>().parameters = declared;
+                }
+
+                UnityEngine.Object.DestroyImmediate(target);
+            }
+        }
+
+        /// <summary>
+        /// VRChat accepts only its own mobile shaders on Android and iOS.
+        /// Solid surfaces become Toon Lit and anything transparent becomes
+        /// the additive particle shader, each keeping its main texture. The
+        /// replacements exist only in this build.
+        ///
+        /// None of those shaders can discard UV tiles, so whatever a material
+        /// hides at rest is cut out of the mesh instead (by Avatar Optimizer,
+        /// when it is installed) and stays that way: toggles that work by
+        /// showing and hiding tiles do nothing in a mobile build.
+        /// </summary>
+        private static void MobileMaterials(GameObject avatar)
+        {
+            var toon = Shader.Find(MobileToon);
+            var glow = Shader.Find(MobileGlow);
+            if (toon == null || glow == null)
+                throw new InvalidOperationException("The VRChat SDK's mobile shaders (" + MobileToon + ", " + MobileGlow + ") are missing.");
+
+            var replaced = new Dictionary<Material, Material>();
+            foreach (var renderer in avatar.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = renderer.sharedMaterials;
+                CutHiddenTiles(renderer, materials);
+                for (var i = 0; i < materials.Length; i++)
+                {
+                    var source = materials[i];
+                    if (source == null || source.shader.name.StartsWith("VRChat/Mobile/", StringComparison.Ordinal)) continue;
+                    if (!replaced.TryGetValue(source, out var mobile))
+                    {
+                        var transparent = source.renderQueue >= (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                        mobile = new Material(transparent ? glow : toon) { name = source.name };
+                        if (source.HasProperty("_MainTex"))
+                        {
+                            mobile.mainTexture = source.GetTexture("_MainTex");
+                            mobile.mainTextureScale = source.GetTextureScale("_MainTex");
+                            mobile.mainTextureOffset = source.GetTextureOffset("_MainTex");
+                        }
+
+                        replaced[source] = mobile;
+                    }
+
+                    materials[i] = mobile;
+                }
+
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        /// <summary>
+        /// VRChat mutes audio sources on Android and iOS avatars and still
+        /// ranks an avatar that has one Very Poor. A feature loses its sound
+        /// there and keeps everything else.
+        /// </summary>
+        private static void RemoveSound(GameObject avatar)
+        {
+            foreach (var spatial in avatar.GetComponentsInChildren<VRC.SDK3.Avatars.Components.VRCSpatialAudioSource>(true))
+                UnityEngine.Object.DestroyImmediate(spatial);
+            foreach (var source in avatar.GetComponentsInChildren<AudioSource>(true))
+                UnityEngine.Object.DestroyImmediate(source);
+        }
+
+        private static bool _warnedAboutOptimizer;
+
+        private static void CutHiddenTiles(Renderer renderer, Material[] materials)
+        {
+            if (!(renderer is SkinnedMeshRenderer)) return;
+            var hidden = materials.Select(HiddenTiles).ToList();
+            if (hidden.All(tiles => tiles == null)) return;
+
+            // Not public API, so it is added by name and configured as data.
+            var type = Type.GetType("Anatawa12.AvatarOptimizer.RemoveMeshByUVTile, com.anatawa12.avatar-optimizer.runtime");
+            if (type == null)
+            {
+                if (!_warnedAboutOptimizer)
+                    Debug.LogWarning("[wirenook] Avatar Optimizer is not installed, so UV tiles hidden at rest are left in " +
+                                     "the mobile build's meshes and will show.");
+                _warnedAboutOptimizer = true;
+                return;
+            }
+
+            var cutter = renderer.GetComponent(type) ?? renderer.gameObject.AddComponent(type);
+            var serialized = new SerializedObject(cutter);
+            var slots = serialized.FindProperty("materials");
+            slots.arraySize = materials.Length;
+            for (var slot = 0; slot < materials.Length; slot++)
+            {
+                var entry = slots.GetArrayElementAtIndex(slot);
+                entry.FindPropertyRelative("uvChannel").enumValueIndex = ToonMaterial.TileUvChannel;
+                for (var tile = 0; tile < ToonMaterial.TileColumns * ToonMaterial.TileRows; tile++)
+                    entry.FindPropertyRelative("removeTile" + tile).boolValue = hidden[slot] != null && hidden[slot][tile];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>Which tiles a material discards as it rests, row by row; null when it discards none.</summary>
+        private static bool[] HiddenTiles(Material material)
+        {
+            if (material == null || !material.HasProperty("_UDIMDiscardCompile") || material.GetFloat("_UDIMDiscardCompile") < 0.5f)
+                return null;
+            var tiles = new bool[ToonMaterial.TileColumns * ToonMaterial.TileRows];
+            for (var row = 0; row < ToonMaterial.TileRows; row++)
+            {
+                for (var column = 0; column < ToonMaterial.TileColumns; column++)
+                {
+                    var property = ToonMaterial.TileProperty(column, row);
+                    tiles[row * ToonMaterial.TileColumns + column] = material.HasProperty(property) && material.GetFloat(property) > 0.5f;
+                }
+            }
+
+            return tiles.Any(tile => tile) ? tiles : null;
         }
 
         private static void Join(AnimatorServicesContext animators, Joining joining)

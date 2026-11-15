@@ -122,9 +122,14 @@ namespace Wirenook.Assets.Editor
 
         /// <param name="joinAvatarMesh">See <see cref="WirenookFeature.joinAvatarMesh"/>.</param>
         /// <param name="summaryIcon">See <see cref="WirenookFeature.summaryIcon"/>; the feature's own icon when left out.</param>
+        /// <param name="pcOnly">The feature cannot work on Android or iOS; see <see cref="WirenookPcOnly"/>.</param>
         public static WirenookFeature Describe(GameObject root, string id, string label, string icon, string tag,
-            int tagPriority = 0, bool joinAvatarMesh = false, string summaryIcon = null)
+            int tagPriority = 0, bool joinAvatarMesh = false, string summaryIcon = null, bool pcOnly = false)
         {
+            var marker = root.GetComponent<WirenookPcOnly>();
+            if (pcOnly && marker == null) root.AddComponent<WirenookPcOnly>();
+            if (!pcOnly && marker != null) UnityEngine.Object.DestroyImmediate(marker);
+
             var feature = Ensure<WirenookFeature>(root);
             feature.id = id;
             feature.label = label;
