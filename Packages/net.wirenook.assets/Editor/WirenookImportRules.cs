@@ -5,9 +5,10 @@ using UnityEngine;
 namespace Wirenook.Assets.Editor
 {
     /// <summary>
-    /// Import settings for the two kinds of texture every wirenook package
-    /// ships, applied by file name so they hold in whichever project imports
-    /// the package rather than depending on per-file settings staying intact.
+    /// Import settings for the textures, models and sounds every wirenook
+    /// package ships, applied by file name so they hold in whichever project
+    /// imports the package rather than depending on per-file settings
+    /// staying intact.
     /// </summary>
     public sealed class WirenookImportRules : AssetPostprocessor
     {
@@ -15,7 +16,7 @@ namespace Wirenook.Assets.Editor
         public const int MenuIconSize = 256;
 
         /// <summary>Bump to make Unity re-import everything these rules cover after they change.</summary>
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         private void OnPreprocessTexture()
         {
@@ -50,6 +51,17 @@ namespace Wirenook.Assets.Editor
                 importer.mipmapEnabled = false;
                 importer.wrapMode = TextureWrapMode.Clamp;
             }
+        }
+
+        private void OnPreprocessAudio()
+        {
+            var path = assetPath.Replace('\\', '/');
+            if (!path.Contains("/net.wirenook.") || !path.Contains("/Sounds/")) return;
+
+            // The SDK refuses to upload an avatar whose animator plays a clip
+            // that is decompressed on load unless it loads in the background,
+            // so that a short sound effect cannot stall whoever loads the avatar.
+            ((AudioImporter)assetImporter).loadInBackground = true;
         }
 
         private bool IsPropModel => assetPath.Replace('\\', '/').Contains("/net.wirenook.") &&
