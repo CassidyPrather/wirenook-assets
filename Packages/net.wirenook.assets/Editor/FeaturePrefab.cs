@@ -121,13 +121,15 @@ namespace Wirenook.Assets.Editor
         }
 
         /// <param name="joinAvatarMesh">See <see cref="WirenookFeature.joinAvatarMesh"/>.</param>
+        /// <param name="summaryIcon">See <see cref="WirenookFeature.summaryIcon"/>; the feature's own icon when left out.</param>
         public static WirenookFeature Describe(GameObject root, string id, string label, string icon, string tag,
-            int tagPriority = 0, bool joinAvatarMesh = false)
+            int tagPriority = 0, bool joinAvatarMesh = false, string summaryIcon = null)
         {
             var feature = Ensure<WirenookFeature>(root);
             feature.id = id;
             feature.label = label;
             feature.icon = WirenookIcons.Get(icon);
+            feature.summaryIcon = WirenookIcons.Get(summaryIcon ?? icon);
             feature.tag = tag;
             feature.tagPriority = tagPriority;
             feature.joinAvatarMesh = joinAvatarMesh;
@@ -308,6 +310,18 @@ namespace Wirenook.Assets.Editor
             Action<ClipBuilder, string> extras = null)
         {
             fx.Bool(parameter);
+            return Layer(fx, layerName, path, on => on.IfTrue(parameter), off => off.IfFalse(parameter), extras);
+        }
+
+        /// <summary>
+        /// The same layer for a prop that is not switched by one bool of its
+        /// own, such as one choice of an integer parameter.
+        /// </summary>
+        /// <param name="whenOn">Adds the conditions under which the prop is out.</param>
+        /// <param name="whenOff">Adds the opposite conditions.</param>
+        public static States Layer(ControllerBuilder fx, string layerName, string path,
+            Action<TransitionBuilder> whenOn, Action<TransitionBuilder> whenOff, Action<ClipBuilder, string> extras = null)
+        {
             var layer = fx.Layer(layerName);
 
             AnimationClip Clip(string phase, AnimationCurve scale) => fx.Clip(layerName + " " + phase, clip =>
@@ -324,9 +338,9 @@ namespace Wirenook.Assets.Editor
                 Disappear = layer.State("Disappear", Clip("disappear", Overshoot(1f, 0f, DisappearSeconds))),
             };
 
-            states.Off.To(states.Appear).IfTrue(parameter);
+            whenOn(states.Off.To(states.Appear));
             states.Appear.To(states.On).AfterTime(1f);
-            states.On.To(states.Disappear).IfFalse(parameter);
+            whenOff(states.On.To(states.Disappear));
             states.Disappear.To(states.Off).AfterTime(1f);
             return states;
         }

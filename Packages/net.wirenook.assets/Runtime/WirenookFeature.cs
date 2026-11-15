@@ -16,11 +16,15 @@ namespace Wirenook.Assets
         [Tooltip("Stable identifier, lower-case kebab-case, e.g. \"flashlight\".")]
         public string id;
 
-        [Tooltip("Name shown on thumbnails and in reports.")]
+        [Tooltip("Name shown in reports.")]
         public string label;
 
-        [Tooltip("Icon shown on thumbnails; usually the feature's menu icon.")]
+        [Tooltip("The feature's own icon; usually its menu icon.")]
         public Texture2D icon;
+
+        [Tooltip("Icon that stands for this feature where an avatar's features are shown together and small, " +
+                 "such as its thumbnail. Features that share one are shown once, so like features can share.")]
+        public Texture2D summaryIcon;
 
         [Tooltip("Avatar search tag this feature contributes. Leave empty when VRChat already lets " +
                  "people filter for it (performance rank, platform, face tracking).")]
