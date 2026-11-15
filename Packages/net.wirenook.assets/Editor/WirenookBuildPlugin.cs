@@ -26,7 +26,8 @@ namespace Wirenook.Assets.Editor
     /// accept. They run only when the build is for one of those (see
     /// <see cref="WirenookPlatform"/>): objects marked PC-only are left out,
     /// hidden UV tiles are cut out of the meshes, since no mobile shader can
-    /// discard them, and every material is replaced by a VRChat mobile one.
+    /// discard them, every material is replaced by a VRChat mobile one, and
+    /// the components VRChat disables there are removed.
     /// </summary>
     public sealed class WirenookBuildPlugin : Plugin<WirenookBuildPlugin>
     {
@@ -87,7 +88,7 @@ namespace Wirenook.Assets.Editor
             {
                 if (!WirenookPlatform.IsMobile) return;
                 MobileMaterials(context.AvatarRootObject);
-                RemoveSound(context.AvatarRootObject);
+                RemoveDisabledComponents(context.AvatarRootObject);
             });
             afterModularAvatar.WithRequiredExtension(typeof(AnimatorServicesContext), sequence =>
             {
@@ -184,16 +185,23 @@ namespace Wirenook.Assets.Editor
         }
 
         /// <summary>
-        /// VRChat mutes audio sources on Android and iOS avatars and still
-        /// ranks an avatar that has one Very Poor. A feature loses its sound
-        /// there and keeps everything else.
+        /// VRChat switches audio sources, lights and colliders off completely
+        /// on Android and iOS avatars, and still ranks an avatar that carries
+        /// one Very Poor. They are taken out, so a feature loses its sound or
+        /// its light there and keeps the rest. A station keeps working
+        /// without its collider: VRChat gives a station that has none a
+        /// trigger of its own when it loads.
         /// </summary>
-        private static void RemoveSound(GameObject avatar)
+        private static void RemoveDisabledComponents(GameObject avatar)
         {
             foreach (var spatial in avatar.GetComponentsInChildren<VRC.SDK3.Avatars.Components.VRCSpatialAudioSource>(true))
                 UnityEngine.Object.DestroyImmediate(spatial);
             foreach (var source in avatar.GetComponentsInChildren<AudioSource>(true))
                 UnityEngine.Object.DestroyImmediate(source);
+            foreach (var light in avatar.GetComponentsInChildren<Light>(true))
+                UnityEngine.Object.DestroyImmediate(light);
+            foreach (var collider in avatar.GetComponentsInChildren<Collider>(true))
+                UnityEngine.Object.DestroyImmediate(collider);
         }
 
         private static bool _warnedAboutOptimizer;

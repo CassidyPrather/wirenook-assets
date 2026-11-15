@@ -45,7 +45,7 @@ with nothing to atlas.
   turns the same prefab into an Android or iOS avatar: objects marked
   `WirenookPcOnly` are left out with their parameters kept, hidden UV
   tiles are cut from the mesh, materials become VRChat's mobile shaders,
-  and audio sources go. `FeaturePrefab.Describe(..., pcOnly: true)` marks
+  and audio sources, lights and colliders go. `FeaturePrefab.Describe(..., pcOnly: true)` marks
   a feature that cannot work there.
 - **`ToonMaterial`** is the single lilToon configuration all materials
   start from: no minimum brightness, UV tile discard on the second UV set,
