@@ -127,6 +127,28 @@ def ping():
     return mix / np.max(np.abs(mix)) * 0.7
 
 
+def bonk():
+    """A toy mallet landing: a hollow thump with a squeak on top."""
+    seconds = 0.3
+    thump = tone(sweep(310, 85, seconds), seconds) * envelope(seconds, 0.002, 0.22, 3)
+    knock = lowpass(noise(seconds, 3), 1800) * envelope(seconds, 0.001, 0.05, 3)
+    rise, fall = 0.06, seconds - 0.06
+    squeak = tone(np.concatenate([sweep(950, 1650, rise), sweep(1650, 820, fall)]), seconds)
+    squeak = squeak * envelope(seconds, 0.004, 0.2, 2)
+    mix = thump + knock * 0.7 + squeak * 0.45
+    return mix / np.max(np.abs(mix)) * 0.8
+
+
+def poof():
+    """A soft burst of air that trails off: something has vanished in smoke."""
+    seconds = 0.55
+    air = lowpass(noise(seconds, 4), 1400) * envelope(seconds, 0.012, 0.5, 2.5)
+    hiss = (noise(seconds, 5) - lowpass(noise(seconds, 5), 3000)) * envelope(seconds, 0.004, 0.2, 3) * 0.25
+    body = tone(sweep(160, 70, seconds), seconds) * envelope(seconds, 0.006, 0.3, 3) * 0.6
+    mix = air + hiss + body
+    return mix / np.max(np.abs(mix)) * 0.75
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "pop-out": pop_out,
@@ -135,6 +157,8 @@ SOUNDS = {
     "portal": portal,
     "megaphone": megaphone,
     "ping": ping,
+    "bonk": bonk,
+    "poof": poof,
 }
 
 
