@@ -149,6 +149,20 @@ def poof():
     return mix / np.max(np.abs(mix)) * 0.75
 
 
+def collect():
+    """Three quick notes up a chord: something has been picked up."""
+    seconds = 0.5
+
+    def note(frequency, delay):
+        length = seconds - delay
+        partials = tone(frequency, length) + 0.25 * tone(frequency * 2.0, length) + 0.1 * tone(frequency * 3.01, length)
+        voiced = partials * envelope(length, 0.002, min(length, 0.3), 2.5)
+        return np.concatenate([np.zeros(int(RATE * delay)), voiced])[: int(RATE * seconds)]
+
+    mix = note(1046.5, 0.0) + note(1318.5, 0.07) + note(1568.0, 0.14)
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "pop-out": pop_out,
@@ -159,6 +173,7 @@ SOUNDS = {
     "ping": ping,
     "bonk": bonk,
     "poof": poof,
+    "collect": collect,
 }
 
 
