@@ -1259,10 +1259,15 @@ def render_sheet(spec: PropSpec, out_dir: pathlib.Path, background: str = SKY, s
     """
     rig, obj = find_prop(spec)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # A prop that is all light (a marker) has no solid parts to frame on or
+    # to show alone, so it is drawn lit in every view.
     solid = _material_points(obj, (SOLID,))
+    all_light = not solid
+    if all_light:
+        solid = _material_points(obj, (GLOW,))
     tiles = []
     with _preview_scene((rig, obj), background) as scene:
-        with _lights_out():
+        with (contextlib.nullcontext() if all_light else _lights_out()):
             for name, stand in VIEWS.items():
                 tiles.append(out_dir / f"{spec.stem}-{name}.png")
                 _render(scene, solid, stand, tiles[-1], size, size)
@@ -1296,7 +1301,7 @@ def render_lineup(blends: Sequence[pathlib.Path], out_dir: pathlib.Path, name: s
             target.objects = list(source.objects)
         rig = next(item for item in target.objects if item.type == "ARMATURE")
         obj = next(item for item in target.objects if item.type == "MESH")
-        solid = _material_points(obj, (SOLID,))
+        solid = _material_points(obj, (SOLID,)) or _material_points(obj, (GLOW,))
         low = Vector(min(p[axis] for p in solid) for axis in range(3))
         high = Vector(max(p[axis] for p in solid) for axis in range(3))
         props.append((rig, obj, low, high))

@@ -114,6 +114,19 @@ def megaphone():
     return buzz * gate * 0.55
 
 
+def ping():
+    """Two quick rising notes with a glassy ring: look over here."""
+    seconds = 0.55
+
+    def note(frequency, delay, length):
+        partials = tone(frequency, length) + 0.3 * tone(frequency * 2.0, length) + 0.12 * tone(frequency * 3.0, length)
+        voiced = partials * envelope(length, 0.002, length, 2.5)
+        return np.concatenate([np.zeros(int(RATE * delay)), voiced, np.zeros(int(RATE * seconds))])[: int(RATE * seconds)]
+
+    mix = note(1174.7, 0.0, 0.12) + note(1760.0, 0.09, 0.46)
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "pop-out": pop_out,
@@ -121,6 +134,7 @@ SOUNDS = {
     "chime": chime,
     "portal": portal,
     "megaphone": megaphone,
+    "ping": ping,
 }
 
 
