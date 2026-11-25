@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Wirenook.Assets.Editor
 {
@@ -20,6 +21,20 @@ namespace Wirenook.Assets.Editor
 
         public const int TileColumns = 4;
         public const int TileRows = 4;
+
+        /// <summary>
+        /// The stencil bit a wirenook surface sets on every pixel it draws,
+        /// so that a later effect can tell "this avatar is here" from
+        /// "something else is" (the censor in net.wirenook.party-tricks
+        /// draws only where it is set). The value is both the bit and the
+        /// write mask: the other seven bits are left as they were found.
+        ///
+        /// The top bit, because the stencil values people pick for avatar
+        /// and world effects are mostly small numbers. Anything else that
+        /// writes it (128 to 255 with a full write mask) looks like one of
+        /// these surfaces to whatever reads it.
+        /// </summary>
+        public const int AvatarStencil = 0x80;
 
         /// <summary>The material float that hides one discard tile when set to 1.</summary>
         public static string TileProperty(int column, int row)
@@ -62,6 +77,8 @@ namespace Wirenook.Assets.Editor
             // hidden part costs no fill; it needs every face to sit in one tile.
             material.SetFloat("_UDIMDiscardMode", 0f);
 
+            MarkStencil(material);
+
             var glows = emissionMask != null;
             material.SetFloat("_UseEmission", glows ? 1f : 0f);
             if (glows)
@@ -70,6 +87,29 @@ namespace Wirenook.Assets.Editor
                 material.SetColor("_EmissionColor", Color.white);
                 // Glow in the swatch's own colour rather than a flat tint.
                 material.SetFloat("_EmissionMainStrength", 1f);
+            }
+
+            EditorUtility.SetDirty(material);
+        }
+
+        /// <summary>
+        /// Makes a lilToon material set <see cref="AvatarStencil"/> wherever
+        /// it is drawn, in its outline pass too if it has one. A pixel is
+        /// only marked where the surface passes the depth test, so what is
+        /// hidden behind something already drawn leaves no mark.
+        /// </summary>
+        public static void MarkStencil(Material material)
+        {
+            foreach (var pass in new[] { "_Stencil", "_OutlineStencil" })
+            {
+                material.SetFloat(pass + "Ref", AvatarStencil);
+                material.SetFloat(pass + "WriteMask", AvatarStencil);
+                // Nothing is read: the surface is drawn whatever is there.
+                material.SetFloat(pass + "ReadMask", 255f);
+                material.SetFloat(pass + "Comp", (float)CompareFunction.Always);
+                material.SetFloat(pass + "Pass", (float)StencilOp.Replace);
+                material.SetFloat(pass + "Fail", (float)StencilOp.Keep);
+                material.SetFloat(pass + "ZFail", (float)StencilOp.Keep);
             }
 
             EditorUtility.SetDirty(material);

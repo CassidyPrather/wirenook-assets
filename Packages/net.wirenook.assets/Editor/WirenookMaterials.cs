@@ -47,6 +47,10 @@ namespace Wirenook.Assets.Editor
         /// Light that adds to whatever is behind it. Unlit on purpose: a beam
         /// in a dark room has to stay bright, which is exactly what solid
         /// surfaces must not do.
+        ///
+        /// It leaves the stencil alone (see <see cref="ToonMaterial.AvatarStencil"/>):
+        /// a beam is not part of the figure, and an effect that covers the
+        /// avatar should not also cover the length of its torch's light.
         /// </summary>
         private static void ConfigureGlow(Material material, Texture2D palette)
         {

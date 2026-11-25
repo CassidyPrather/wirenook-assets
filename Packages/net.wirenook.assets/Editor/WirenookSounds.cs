@@ -16,6 +16,31 @@ namespace Wirenook.Assets.Editor
         public const string Folder = "Packages/net.wirenook.assets/Sounds";
         public const string SourceName = "SFX";
 
+        /// <summary>
+        /// The volume every sound plays at unless a feature says otherwise.
+        /// The files are all written at one loudness (tools/sfx.py brings
+        /// them to it), so one volume for all of them is what keeps them
+        /// balanced; a feature should have a reason to pass another.
+        /// VRChat sets the source's volume to this each time a sound plays.
+        /// </summary>
+        public const float Volume = 1f;
+
+        /// <summary>
+        /// How loud the sounds are overall: the boost VRChat adds to the
+        /// source, in decibels. This is the one number to change to make
+        /// every sound louder or quieter. VRChat caps it at 10 on avatars,
+        /// which is also the boost it gives a world's sounds by default, so
+        /// at 6 these stay a little under the sounds of the room.
+        /// </summary>
+        public const float Gain = 6f;
+
+        /// <summary>
+        /// How far the sounds carry, in metres. Short-ranged: these are cues
+        /// for the people standing nearby, not announcements. VRChat caps
+        /// this at 40 on avatars.
+        /// </summary>
+        public const float Far = 12f;
+
         public static AudioClip Get(string name)
         {
             return AssetDatabase.LoadAssetAtPath<AudioClip>(Folder + "/" + name + ".wav");
@@ -23,8 +48,7 @@ namespace Wirenook.Assets.Editor
 
         /// <summary>
         /// The feature's audio source, created under <paramref name="parent"/>
-        /// if missing. Quiet and short-ranged: these are cues for the people
-        /// standing nearby, not announcements.
+        /// if missing.
         /// </summary>
         public static AudioSource Source(GameObject parent)
         {
@@ -33,21 +57,22 @@ namespace Wirenook.Assets.Editor
             source.playOnAwake = false;
             source.loop = false;
             source.clip = null;
-            source.volume = 0.5f;
+            source.volume = Volume;
             source.spatialBlend = 1f;
             source.dopplerLevel = 0f;
 
             var spatial = FeaturePrefab.Ensure<VRCSpatialAudioSource>(holder);
-            spatial.Gain = 0f;
+            spatial.Gain = Gain;
             spatial.Near = 0f;
-            spatial.Far = 12f;
+            spatial.Far = Far;
             spatial.EnableSpatialization = true;
             return source;
         }
 
         /// <summary>Plays a clip on the feature's source each time <paramref name="state"/> is entered.</summary>
         /// <param name="sourcePath">Animation path of the source object, relative to the merged controller's root.</param>
-        public static void PlayOnEnter(StateBuilder state, string sourcePath, string clipName, float volume = 0.5f)
+        /// <param name="volume">Leave out to play at the shared level; see <see cref="Volume"/>.</param>
+        public static void PlayOnEnter(StateBuilder state, string sourcePath, string clipName, float volume = Volume)
         {
             var clip = Get(clipName);
             if (clip == null)

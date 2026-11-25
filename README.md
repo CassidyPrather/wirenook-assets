@@ -25,8 +25,8 @@ with nothing to atlas.
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
 | `Icons/` | 32 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
-| `Sounds/` | Six short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`). |
-| `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling, and `WirenookHandGrip`, which marks where a hand-held prop sits in a hand. Both are editor-only and stripped from uploads. |
+| `Sounds/` | Ten short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`), all at one loudness. |
+| `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
 
 ### Editor helpers
@@ -49,10 +49,12 @@ with nothing to atlas.
   a feature that cannot work there.
 - **`ToonMaterial`** is the single lilToon configuration all materials
   start from: no minimum brightness, UV tile discard on the second UV set,
-  and lilToon's Clipping Canceller switched on for the project.
+  and lilToon's Clipping Canceller switched on for the project. It also
+  makes a surface mark the stencil where it is drawn (see below).
 - **`HandGrip`** fits hand-held props to an avatar from its finger bones.
 - **`WirenookSounds`** gives a feature one audio source and plays clips on
-  it from animator states.
+  it from animator states, all at one volume. Its `Gain` is the one number
+  that makes every sound louder or quieter.
 - **`FeatureTags`** (in `Runtime/Core`, engine-free and unit-tested) turns
   the features on an avatar into VRChat's tag list: required tags first,
   then features by priority, within the ten-tag limit.
@@ -65,6 +67,19 @@ A prop model is a skinned mesh with a small armature, exported to a
 package's `Models/` folder with its materials named `wirenook` and
 `wirenook-glow`. Its root bone sits at the hold point. `tools/blender/`
 has the Blender library the props are built and validated with.
+
+### The stencil bit
+
+Every opaque surface `ToonMaterial.Configure` sets up, which is the
+`wirenook` material and any avatar built on it, sets stencil bit 128
+(`ToonMaterial.AvatarStencil`) on the pixels it draws, outline included,
+with a write mask of 128 so the other seven bits are left as they were.
+`wirenook-glow` does not: light is not part of the figure. The bit is how a
+later effect tells this avatar from the room behind it; the mosaic censor in
+[party-tricks](https://github.com/CassidyPrather/party-tricks) draws only
+where it is set, and its README lists what follows from that. Nothing else
+reads it. A stencil effect of someone else's that compares all eight bits
+will see its value changed by 128 where one of these surfaces is drawn.
 
 ### Project settings this package changes
 
@@ -89,6 +104,31 @@ need Python 3.11+, Pillow and numpy; `icons.py` needs Inkscape on the PATH.
 
 The sounds are synthesised from sine partials and filtered noise by
 `tools/sfx.py`; nothing is sampled.
+
+### How loud the sounds are
+
+`tools/sfx.py` writes every sound at the same loudness, so that features
+can play them all at one volume and none drowns another. The measure is the
+level of a sound's loudest 200 ms after K-weighting (the filter of ITU-R
+BS.1770, which follows the ear better than plain RMS), and each sound is
+brought to -17 dB relative to full scale on it. The megaphone is 2 dB over
+the rest, because being heard is its job. No sample goes above -6 dB:
+VRChat runs avatar audio through a compressor and
+[advises](https://creators.vrchat.com/worlds/components/vrc_spatialaudiosource/)
+files normalised to between -6 and -12 dB. The click is too short to reach
+the shared loudness under that ceiling and is about 3 dB quieter. The tool
+prints the loudness and peak of each file it writes.
+
+`WirenookSounds` then plays them at full volume through a VRC Spatial Audio
+Source with 6 dB of gain, heard out to 12 m. VRChat allows an avatar 10 dB
+and 40 m. To change how loud everything is, change `WirenookSounds.Gain`
+and rebuild the prefabs of each package that plays a sound; to change one
+sound against the rest, give it an entry in `TRIM` in `tools/sfx.py`.
+
+The levels are measured, not listened to in a busy instance. Two things
+the measure does not cover: the laser pointer's ping is heard out to 30 m
+instead of 12, so it falls off more slowly with distance than the others,
+and how VRChat's compressor treats these is not known.
 
 ## Development
 

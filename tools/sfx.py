@@ -6,7 +6,11 @@
 Every sound is built from sine partials and filtered noise here rather than
 taken from a sample library, which keeps the package free of third-party
 audio and its licences. Mono, 44.1 kHz, 16-bit, each under a second: these
-play from an avatar, where short and quiet is polite.
+play from an avatar, where short is polite.
+
+Every sound is written at the same loudness (see LOUDNESS), so features can
+all play them at one volume and none drowns another. How loud they are in
+VRChat is then set in one place, WirenookSounds.cs.
 """
 
 import pathlib
@@ -16,6 +20,23 @@ import numpy as np
 
 RATE = 44100
 OUT = pathlib.Path(__file__).resolve().parents[1] / "Packages" / "net.wirenook.assets" / "Sounds"
+
+# The loudness every sound is brought to, in dB relative to full scale: the
+# level of its loudest 200 ms after K-weighting (the ITU-R BS.1770 filter,
+# which follows the ear better than plain RMS: a bell and a thump of equal
+# RMS are not equally loud). 200 ms is about how long the ear takes to judge
+# loudness; the standard's own 400 ms window under-reads sounds that decay
+# as fast as these do.
+LOUDNESS = -17.0
+
+# Sounds that are meant to stand out from the rest, in dB over LOUDNESS.
+TRIM = {"megaphone": 2.0}
+
+# No sample goes above this, in dB relative to full scale. VRChat runs avatar
+# audio through a compressor and advises files normalised to between -6 and
+# -12 dB to stay clear of it. A sound too short and sharp to reach LOUDNESS
+# under this ceiling (the click) is left quieter instead.
+PEAK = -6.0
 
 
 def tone(frequency, seconds, phase=0.0):
@@ -177,22 +198,83 @@ SOUNDS = {
 }
 
 
-def write(name, signal):
-    OUT.mkdir(parents=True, exist_ok=True)
+def biquad(signal, b, a):
+    """One second-order filter section, direct form 1; `a[0]` is taken as 1."""
+    out = np.empty_like(signal)
+    x1 = x2 = y1 = y2 = 0.0
+    for index, x in enumerate(signal):
+        y = b[0] * x + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2
+        x2, x1 = x1, x
+        y2, y1 = y1, y
+        out[index] = y
+    return out
+
+
+def k_weighted(signal):
+    """The ITU-R BS.1770 pre-filter: a high shelf for the head, then a high-pass.
+
+    The standard tabulates coefficients for 48 kHz only; these are the same
+    two filters derived for RATE from their analogue prototypes.
+    """
+    k = np.tan(np.pi * 1681.974450955533 / RATE)
+    q = 0.7071752369554196
+    high = 10 ** (3.999843853973347 / 20)
+    band = high**0.4996667741545416
+    a0 = 1 + k / q + k * k
+    shelved = biquad(
+        signal,
+        [(high + band * k / q + k * k) / a0, 2 * (k * k - high) / a0, (high - band * k / q + k * k) / a0],
+        [1.0, 2 * (k * k - 1) / a0, (1 - k / q + k * k) / a0],
+    )
+    k = np.tan(np.pi * 38.13547087602444 / RATE)
+    q = 0.5003270373238773
+    a0 = 1 + k / q + k * k
+    return biquad(shelved, [1.0, -2.0, 1.0], [1.0, 2 * (k * k - 1) / a0, (1 - k / q + k * k) / a0])
+
+
+def loudness(signal, seconds=0.2):
+    """K-weighted level of the loudest `seconds` of a sound, in dB relative to full scale.
+
+    A sound shorter than the window is measured as if followed by silence,
+    so a 50 ms click does not count as loud as 200 ms of the same level.
+    """
+    window = int(RATE * seconds)
+    weighted = k_weighted(signal)
+    weighted = np.concatenate([weighted, np.zeros(max(0, window - len(weighted)))])
+    energy = np.cumsum(np.concatenate([[0.0], weighted**2]))
+    mean_square = np.max(energy[window:] - energy[:-window]) / window
+    # The constant is the standard's: a full-scale 997 Hz sine reads -3.01.
+    return -0.691 + 10 * np.log10(max(mean_square, 1e-12))
+
+
+def peak(signal):
+    return 20 * np.log10(max(np.max(np.abs(signal)), 1e-12))
+
+
+def finish(name, signal):
+    """Fades the ends and brings the sound to the shared loudness."""
     # A few milliseconds of fade at both ends guarantees no click at the cut.
     edge = int(RATE * 0.003)
     signal = signal.copy()
     signal[:edge] *= np.linspace(0, 1, edge)
     signal[-edge:] *= np.linspace(1, 0, edge)
-    data = (np.clip(signal, -1, 1) * 32767).astype("<i2")
+
+    gain = min(LOUDNESS + TRIM.get(name, 0.0) - loudness(signal), PEAK - peak(signal))
+    return signal * 10 ** (gain / 20)
+
+
+def write(name, signal):
+    OUT.mkdir(parents=True, exist_ok=True)
+    data = np.round(np.clip(signal, -1, 1) * 32767).astype("<i2")
     with wave.open(str(OUT / f"{name}.wav"), "wb") as out:
         out.setnchannels(1)
         out.setsampwidth(2)
         out.setframerate(RATE)
         out.writeframes(data.tobytes())
-    print(f"sfx: {name}.wav ({len(data) / RATE:.2f}s)")
+    written = data / 32767
+    print(f"sfx: {name}.wav ({len(data) / RATE:.2f}s, loudness {loudness(written):.1f}, peak {peak(written):.1f} dB)")
 
 
 if __name__ == "__main__":
     for sound_name, build in SOUNDS.items():
-        write(sound_name, build())
+        write(sound_name, finish(sound_name, build()))
