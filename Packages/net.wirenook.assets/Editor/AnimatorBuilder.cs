@@ -54,6 +54,21 @@ namespace Wirenook.Assets.Editor
             return new ControllerBuilder(controller, assetPath);
         }
 
+        /// <summary>
+        /// A controller that is no asset: for a step of an avatar build,
+        /// which works on a copy and hands what it makes to the build to
+        /// keep. Nothing is written to the project.
+        /// </summary>
+        public static ControllerBuilder InMemory(string name)
+        {
+            return new ControllerBuilder(new AnimatorController { name = name }, null);
+        }
+
+        private void Keep(UnityEngine.Object part)
+        {
+            if (_path != null) AssetDatabase.AddObjectToAsset(part, _path);
+        }
+
         public ControllerBuilder Bool(string name, bool defaultValue = false)
         {
             return Parameter(name, AnimatorControllerParameterType.Bool, p => p.defaultBool = defaultValue);
@@ -90,7 +105,7 @@ namespace Wirenook.Assets.Editor
                 entryPosition = new Vector3(0, -160),
                 exitPosition = new Vector3(600, -160),
             };
-            AssetDatabase.AddObjectToAsset(machine, _path);
+            Keep(machine);
             Controller.AddLayer(new AnimatorControllerLayer
             {
                 name = name,
@@ -111,7 +126,7 @@ namespace Wirenook.Assets.Editor
             if (_clips.TryGetValue(name, out var existing)) return existing;
             var clip = new AnimationClip { name = name, hideFlags = HideFlags.None };
             build?.Invoke(new ClipBuilder(clip));
-            AssetDatabase.AddObjectToAsset(clip, _path);
+            Keep(clip);
             _clips[name] = clip;
             return clip;
         }
@@ -129,7 +144,7 @@ namespace Wirenook.Assets.Editor
                 useAutomaticThresholds = false,
                 hideFlags = HideFlags.HideInHierarchy,
             };
-            AssetDatabase.AddObjectToAsset(tree, _path);
+            Keep(tree);
             foreach (var (threshold, motion) in children) tree.AddChild(motion, threshold);
             return tree;
         }
@@ -148,7 +163,7 @@ namespace Wirenook.Assets.Editor
                 blendType = BlendTreeType.Direct,
                 hideFlags = HideFlags.HideInHierarchy,
             };
-            AssetDatabase.AddObjectToAsset(tree, _path);
+            Keep(tree);
             foreach (var child in children) tree.AddChild(child);
             var entries = tree.children;
             for (var i = 0; i < entries.Length; i++) entries[i].directBlendParameter = weightParameter;
@@ -159,12 +174,13 @@ namespace Wirenook.Assets.Editor
         internal T AddSubAsset<T>(T asset) where T : UnityEngine.Object
         {
             asset.hideFlags = HideFlags.HideInHierarchy;
-            AssetDatabase.AddObjectToAsset(asset, _path);
+            Keep(asset);
             return asset;
         }
 
         public void Save()
         {
+            if (_path == null) return;
             EditorUtility.SetDirty(Controller);
             AssetDatabase.SaveAssetIfDirty(Controller);
         }

@@ -27,7 +27,7 @@ with nothing to atlas.
 | `Icons/` | 51 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
 | `Sounds/` | Twelve short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`), all at one loudness, and `buzz`, a quiet hum written to loop. |
 | `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
-| `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
+| `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand, when it is held and how the fingers close on it; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
 
 ### Editor helpers
@@ -63,6 +63,16 @@ with nothing to atlas.
 - **`WirenookSignals`** names the animator parameters that mean the same
   thing in every package (`WN/Away`).
 - **`HandGrip`** fits hand-held props to an avatar from its finger bones.
+- **`HandPoses`** closes a hand round what it holds. A feature marks its
+  grip (`WirenookHandGrip`) with when the prop is in the hand (`held`: a
+  bool that is on, an integer with a value, or several together) and how
+  far the fingers, the index finger and the thumb close. The build then
+  gives each hand two layers in the Gesture playable layer: one holds a
+  pose per prop, masked to that hand's fingers and resting at no weight;
+  the other raises it and hands the fingers from tracking to animation
+  for as long as something is held. One state machine per hand decides,
+  so two tools cannot disagree, and a new prop gets its pose by being
+  described.
 - **`WirenookSounds`** gives a feature one audio source and plays clips on
   it from animator states, all at one volume. Its `Gain` is the one number
   that makes every sound louder or quieter.

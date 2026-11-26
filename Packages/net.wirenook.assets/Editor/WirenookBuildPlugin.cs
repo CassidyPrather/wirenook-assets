@@ -57,6 +57,11 @@ namespace Wirenook.Assets.Editor
                 if (WirenookPlatform.IsMobile) RemovePcOnly(context.AvatarRootObject);
             });
 
+            // Modular Avatar merges what this makes, and renumbers the layers
+            // its behaviours name; after the mobile cut, so that a prop left
+            // out of a mobile build closes no hand there.
+            beforeModularAvatar.Run("Close hands round what they hold", context => HandPoses.Build(context.AvatarRootObject));
+
             // Features are found by walking down from their marker, so this
             // has to happen first: Modular Avatar later moves hand-held props
             // out from under their feature and onto the hand bones.
