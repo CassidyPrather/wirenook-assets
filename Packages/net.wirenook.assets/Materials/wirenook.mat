@@ -605,6 +605,10 @@ Material:
     - _WirenookScreen: 0
     - _WirenookScreenTile: -1
     - _WirenookSign: 0
+    - _WirenookSignB: 0
+    - _WirenookSignBShow: 0
+    - _WirenookSignC: 0
+    - _WirenookSignCShow: 0
     - _WirenookSignReach: 0.3
     - _WirenookSignShow: 0
     - _ZClip: 1

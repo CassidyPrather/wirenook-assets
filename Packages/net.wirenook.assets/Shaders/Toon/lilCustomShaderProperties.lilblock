@@ -5,4 +5,7 @@
                         _WirenookScreenTile         ("Screen Tile", Float) = -1
                         _WirenookSign               ("Sign", Float) = 0
                         _WirenookSignShow           ("Sign Show", Range(0, 2)) = 0
-                        _WirenookSignReach          ("Sign Reach", Float) = 0.3
+                        _WirenookSignB              ("Sign B", Float) = 0
+                        _WirenookSignBShow          ("Sign B Show", Range(0, 2)) = 0
+                        _WirenookSignC              ("Sign C", Float) = 0
+                        _WirenookSignCShow          ("Sign C Show", Range(0, 2)) = 0

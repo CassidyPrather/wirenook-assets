@@ -40,28 +40,58 @@ namespace Wirenook.Assets.Editor
     ///
     /// Every vertex is stored at the pivot. Where it belongs on the sign is
     /// in the third UV set, in metres right and up of the pivot; the fourth
-    /// holds the sign's number and the layer the shape is on. A sign is
+    /// holds the sign's number and, in one number, the layer the shape is on
+    /// and how far out the sign stands. A sign is
     /// therefore nothing at all, not even a speck, wherever the shader does
     /// not unfold it: at rest, on a client that blocks the avatar's shaders,
     /// and in a mobile build.
     ///
-    /// Signs are numbered from 1, and an avatar's material shows one number
-    /// at a time (<see cref="ToonMaterial.Sign"/>). Features that each bring
-    /// a sign take turns by construction; give each its own number.
+    /// Signs are numbered from 1. An avatar's material shows one number at
+    /// a time in each of three places (<see cref="ToonMaterial.Sign"/>,
+    /// <see cref="ToonMaterial.SignB"/>, <see cref="ToonMaterial.SignC"/>),
+    /// so features that animate the same one take turns by construction.
+    /// Give each sign its own number, whichever of the three shows it.
     /// </summary>
     public sealed class SignMesh
     {
-        private readonly int _sign;
+        private int _sign;
+        private int _reach;
         private readonly List<Vector2> _places = new List<Vector2>();
         private readonly List<Vector2> _colours = new List<Vector2>();
         private readonly List<Vector2> _which = new List<Vector2>();
         private readonly List<int> _triangles = new List<int>();
 
-        public SignMesh(int sign)
+        /// <param name="sign">The sign's number: 1 and up, and no other sign's on the same avatar.</param>
+        /// <param name="reach">
+        /// Metres the sign stands out from its pivot towards the viewer, to
+        /// the centimetre. 0.3 from a pivot in the chest stands it at the
+        /// edge of the figure; 0 keeps it on the pivot, for one that hangs
+        /// in the air beside or above.
+        /// </param>
+        public SignMesh(int sign, float reach = 0.3f)
         {
             if (sign < 1) throw new ArgumentOutOfRangeException(nameof(sign), "Signs are numbered from 1; 0 is ordinary geometry.");
+            if (reach < 0f || reach > 2f) throw new ArgumentOutOfRangeException(nameof(reach), "A sign stands between 0 and 2 m out.");
             _sign = sign;
+            _reach = Mathf.RoundToInt(reach * 100f);
         }
+
+        /// <summary>
+        /// Starts another sign in the same mesh, on the same pivot: what is
+        /// drawn from here on belongs to it. Signs that share a pivot share
+        /// a renderer this way.
+        /// </summary>
+        public SignMesh Next(int sign, float reach = 0.3f)
+        {
+            if (sign < 1) throw new ArgumentOutOfRangeException(nameof(sign), "Signs are numbered from 1; 0 is ordinary geometry.");
+            if (reach < 0f || reach > 2f) throw new ArgumentOutOfRangeException(nameof(reach), "A sign stands between 0 and 2 m out.");
+            _sign = sign;
+            _reach = Mathf.RoundToInt(reach * 100f);
+            return this;
+        }
+
+        /// <summary>How many layers a sign can have, back to front.</summary>
+        public const int Layers = 16;
 
         public int Triangles => _triangles.Count / 3;
 
@@ -69,13 +99,18 @@ namespace Wirenook.Assets.Editor
         public SignMesh Shape(string swatch, int layer, params Vector2[] corners)
         {
             if (corners.Length < 3) throw new ArgumentException("A shape needs three corners.", nameof(corners));
+            if (layer < 0 || layer >= Layers) throw new ArgumentOutOfRangeException(nameof(layer), "A sign has layers 0 to " + (Layers - 1) + ".");
             var first = _places.Count;
             var colour = WirenookPalette.Uv(swatch);
             foreach (var corner in corners)
             {
                 _places.Add(corner);
                 _colours.Add(colour);
-                _which.Add(new Vector2(_sign, layer));
+                // The number goes in negative: a mesh with no fourth UV set is given
+                // a lower set in its place when meshes are merged or drawn, and no
+                // other set is negative, so nothing else can pass for a sign. The
+                // shader takes the second number apart again: layer + 16 * centimetres.
+                _which.Add(new Vector2(-_sign, layer + Layers * _reach));
             }
 
             for (var i = 1; i < corners.Length - 1; i++)
@@ -102,6 +137,29 @@ namespace Wirenook.Assets.Editor
         {
             return Shape(swatch, layer, Enumerable.Range(0, sides)
                 .Select(i => new Vector2(x + radius * Mathf.Cos(2f * Mathf.PI * i / sides), y + radius * Mathf.Sin(2f * Mathf.PI * i / sides))).ToArray());
+        }
+
+        /// <summary>A star: <paramref name="points"/> spikes between two radii, turned by <paramref name="turn"/> radians.</summary>
+        public SignMesh Star(string swatch, int layer, float x, float y, float outer, float inner, int points, float turn = 0f)
+        {
+            var centre = new Vector2(x, y);
+            Vector2 Corner(int i)
+            {
+                var angle = turn + Mathf.PI * i / points;
+                return centre + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (i % 2 == 0 ? outer : inner);
+            }
+
+            // A star is not convex; a fan of triangles from its centre is.
+            for (var i = 0; i < points * 2; i++) Shape(swatch, layer, centre, Corner(i), Corner(i + 1));
+            return this;
+        }
+
+        /// <summary>A straight bar from one point to another, <paramref name="width"/> thick.</summary>
+        public SignMesh Bar(string swatch, int layer, Vector2 from, Vector2 to, float width)
+        {
+            var along = (to - from).normalized;
+            var across = new Vector2(-along.y, along.x) * (width / 2f);
+            return Shape(swatch, layer, from - across, to - across, to + across, from + across);
         }
 
         /// <summary>

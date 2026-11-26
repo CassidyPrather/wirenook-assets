@@ -35,13 +35,19 @@ void wirenookSign(inout float4 positionOS, float2 place, float2 which)
     // Unity is left-handed: with the board's face towards the viewer, this is the viewer's right.
     float3 right = cross(toward, float3(0.0, 1.0, 0.0));
 
-    float show = abs(which.x - _WirenookSign) < 0.5 ? _WirenookSignShow : 0.0;
+    float number = -which.x;
+    float show = max(abs(number - _WirenookSign) < 0.5 ? _WirenookSignShow : 0.0,
+        max(abs(number - _WirenookSignB) < 0.5 ? _WirenookSignBShow : 0.0,
+            abs(number - _WirenookSignC) < 0.5 ? _WirenookSignCShow : 0.0));
+    // The layer, and how far out the sign stands, in one number.
+    float reach = floor(which.y / 16.0) * 0.01;
+    float layer = which.y - floor(which.y / 16.0) * 16.0;
     // Someone standing in the avatar, its wearer above all, would have the
     // board in their face or behind their head. It folds away for them.
     show *= smoothstep(0.45, 0.7, away / scale);
 
     float3 position = pivot
-        + toward * (_WirenookSignReach + which.y * 0.004) * show * scale
+        + toward * (reach + layer * 0.004) * show * scale
         + (right * place.x + float3(0.0, 1.0, 0.0) * place.y) * show * scale;
     positionOS.xyz = mul(LIL_MATRIX_I_M, float4(position, 1.0)).xyz;
 }
@@ -80,7 +86,10 @@ void wirenookGlitch(inout float4 positionOS, uint vertexID)
 
 void wirenookVertex(inout float4 positionOS, float2 place, float2 which, uint vertexID)
 {
-    if (which.x > 0.5)
+    // A sign's number is stored negative. A mesh without a fourth UV set is
+    // handed one of its lower sets in its place, by the graphics API and by
+    // optimisers that merge meshes alike, and none of those is ever negative.
+    if (which.x < -0.5)
     {
         // A sign stays whole while the figure behind it falls apart: it is what says why.
         wirenookSign(positionOS, place, which);
@@ -94,11 +103,13 @@ void wirenookVertex(inout float4 positionOS, float2 place, float2 which, uint ve
 // An eight by eight sad face, a row per entry from the top, a bit per pixel from the left.
 static const float wirenookSadFace[8] = { 0.0, 36.0, 36.0, 0.0, 0.0, 60.0, 66.0, 0.0 };
 
-void wirenookScreen(inout float3 colour, float2 at, float2 uv1)
+void wirenookScreen(inout float3 colour, float2 place, float2 uv1)
 {
     if (_WirenookScreen <= 0.0 || _WirenookScreenTile < 0.0) return;
     float2 tile = floor(uv1);
     if (abs(tile.x + tile.y * 4.0 - _WirenookScreenTile) > 0.5) return;
+    // Stored one to the right and up, so that the set is never negative (see wirenookVertex).
+    float2 at = place - 1.0;
 
     float2 pixel = floor(saturate(at) * 7.999);
     float row = wirenookSadFace[(int)(7.0 - pixel.y)];

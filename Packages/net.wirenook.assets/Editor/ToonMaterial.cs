@@ -34,17 +34,31 @@ namespace Wirenook.Assets.Editor
         public const string ScreenTile = "_WirenookScreenTile";
 
         /// <summary>
-        /// The UV set that says where on a screen a point is: (0,0) to (1,1)
-        /// across the picture. On a sign's vertices the same set holds their
+        /// The UV set that says where on a screen a point is: (1,1) to (2,2)
+        /// across the picture, one more than the place each way so that the
+        /// set is never negative. On a sign's vertices the same set holds their
         /// place on the sign instead (<see cref="SignMesh"/>).
         /// </summary>
         public const int ScreenUvChannel = 2;
 
-        /// <summary>Which sign is out (see <see cref="SignMesh"/>); 0 for none.</summary>
+        /// <summary>
+        /// Which sign is out (see <see cref="SignMesh"/>); 0 for none. There
+        /// are three of these, each showing one sign at a time and each with
+        /// its own size: this one is for what the wearer is doing (away,
+        /// busy), <see cref="SignB"/> for what is happening to the avatar
+        /// (reactions), and <see cref="SignC"/> for what a tool has to say.
+        /// A feature takes the one for its kind, and a number no other
+        /// feature has.
+        /// </summary>
         public const string Sign = "_WirenookSign";
 
         /// <summary>The size the sign that is out is drawn at: 0 folded away, 1 full size.</summary>
         public const string SignShow = "_WirenookSignShow";
+
+        public const string SignB = "_WirenookSignB";
+        public const string SignBShow = "_WirenookSignBShow";
+        public const string SignC = "_WirenookSignC";
+        public const string SignCShow = "_WirenookSignCShow";
 
         /// <summary>The UV set that carries discard tiles; UV0 stays free for texturing.</summary>
         public const int TileUvChannel = 1;

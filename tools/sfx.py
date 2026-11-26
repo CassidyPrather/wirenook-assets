@@ -228,6 +228,63 @@ def buzz():
     return mix / np.max(np.abs(mix)) * 0.6
 
 
+def sizzle():
+    """Something hot against something that minds: a hiss that crackles out."""
+    seconds = 0.6
+    hiss = noise(seconds, 7) - lowpass(noise(seconds, 7), 2500)
+    crackle = (np.abs(noise(seconds, 8)) > 0.985) * noise(seconds, 9)
+    mix = hiss * envelope(seconds, 0.01, 0.55, 2.0) * 0.6 + lowpass(crackle, 5000) * envelope(seconds, 0.02, 0.5, 1.5) * 2.5
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def frost():
+    """Ice forming: a few thin glassy notes falling over one another."""
+    seconds = 0.6
+
+    def crystal(frequency, delay):
+        length = seconds - delay
+        voiced = (tone(frequency, length) + 0.4 * tone(frequency * 2.76, length)) * envelope(length, 0.001, min(length, 0.25), 3)
+        return np.concatenate([np.zeros(int(RATE * delay)), voiced])[: int(RATE * seconds)]
+
+    mix = crystal(2637.0, 0.0) + crystal(3136.0, 0.06) + crystal(2349.3, 0.13) + crystal(3520.0, 0.19)
+    return mix / np.max(np.abs(mix)) * 0.6
+
+
+def splash():
+    """A drop into water: a low plop and the spray after it."""
+    seconds = 0.5
+    plop = tone(sweep(520, 140, 0.12), 0.12) * envelope(0.12, 0.002, 0.11, 2)
+    plop = np.concatenate([plop, np.zeros(int(RATE * seconds) - len(plop))])
+    spray = (lowpass(noise(seconds, 10), 4200) - lowpass(noise(seconds, 10), 600)) * envelope(seconds, 0.03, 0.45, 2.5)
+    mix = plop + spray * 1.6
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def whoosh():
+    """A gust going past: air that swells and thins, rising as it comes and falling as it goes."""
+    seconds = 0.7
+    air = noise(seconds, 11)
+    # A band of the noise whose centre moves: low-pass at a moving cutoff, less the rumble under it.
+    time = np.arange(int(RATE * seconds)) / RATE
+    cutoff = 500 + 2600 * np.sin(np.pi * time / seconds) ** 2
+    out = np.empty_like(air)
+    value = 0.0
+    for index, sample in enumerate(air):
+        value += (1 - np.exp(-2 * np.pi * cutoff[index] / RATE)) * (sample - value)
+        out[index] = value
+    mix = (out - lowpass(out, 250)) * np.sin(np.pi * time / seconds) ** 1.5
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def boing():
+    """A spring let go: one note that wobbles up and down as it dies."""
+    seconds = 0.5
+    time = np.arange(int(RATE * seconds)) / RATE
+    wobble = 300 * (1 + 0.45 * np.sin(2 * np.pi * 13 * time) * np.exp(-time * 5))
+    mix = (tone(wobble, seconds) + 0.3 * tone(wobble * 2, seconds)) * envelope(seconds, 0.003, 0.48, 2)
+    return mix / np.max(np.abs(mix)) * 0.75
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "pop-out": pop_out,
@@ -242,6 +299,11 @@ SOUNDS = {
     "unplug": unplug,
     "plug": plug,
     "buzz": buzz,
+    "sizzle": sizzle,
+    "frost": frost,
+    "splash": splash,
+    "whoosh": whoosh,
+    "boing": boing,
 }
 
 

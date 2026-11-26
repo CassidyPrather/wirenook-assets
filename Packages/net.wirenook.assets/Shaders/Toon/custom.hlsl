@@ -13,20 +13,27 @@
 // _WirenookScreen (0..1). Draws a blue error screen with a sad face in place
 //   of the surface, on the faces of one UV discard tile (_WirenookScreenTile,
 //   column + 4 * row on the second UV set; -1 for none). Where on a screen a
-//   point is comes from the third UV set: (0,0) to (1,1) across the picture,
-//   which is clamped beyond that, so a screen larger than its picture is
-//   plain blue around it. The model's importer writes those for each eye.
+//   point is comes from the third UV set, less one each way: (1,1) to (2,2)
+//   across the picture, which is clamped beyond that, so a screen larger
+//   than its picture is plain blue around it. The model's importer writes
+//   those for each eye.
 //
 // _WirenookSign and _WirenookSignShow. A sign is geometry that turns to face
 //   whoever looks at it and stands a little way out from the avatar towards
 //   them. Its vertices all sit at one pivot in the mesh and carry their
 //   place on the sign in the third UV set (metres right and up of the pivot)
-//   and, in the fourth, which sign they belong to (1 and up; 0 is ordinary
-//   geometry) and how far forward their layer is. A sign is drawn while
-//   _WirenookSign is its number, at the size _WirenookSignShow says (0
-//   folds it away to nothing, 1 is full size), _WirenookSignReach metres
-//   out from the pivot. One sign shows at a time, on purpose: features that
-//   each want a sign share the avatar's mesh and material and take turns.
+//   and, in the fourth, which sign they belong to, negated (-1 and down;
+//   anything else is ordinary geometry) and, packed into one number, the layer they are on and how
+//   far out from the pivot the sign stands (layer + 16 * centimetres). A
+//   sign is drawn while _WirenookSign is its number, at the size
+//   _WirenookSignShow says (0 folds it away to nothing, 1 is full size).
+//
+//   There are three such pairs: _WirenookSign, _WirenookSignB and
+//   _WirenookSignC, each with its Show. Each shows one sign at a time, on
+//   purpose: features that share a pair share the avatar's mesh and
+//   material and take turns. The pairs are for kinds of thing that should
+//   not have to take turns with each other; ToonMaterial says which is
+//   which.
 
 #define LIL_REQUIRE_APP_TEXCOORD1
 #define LIL_REQUIRE_APP_TEXCOORD2
@@ -39,7 +46,10 @@
     float _WirenookScreenTile; \
     float _WirenookSign; \
     float _WirenookSignShow; \
-    float _WirenookSignReach;
+    float _WirenookSignB; \
+    float _WirenookSignBShow; \
+    float _WirenookSignC; \
+    float _WirenookSignCShow;
 
 #define LIL_CUSTOM_VERTEX_OS \
     wirenookVertex(positionOS, input.uv2, input.uv3, input.vertexID);
