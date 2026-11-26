@@ -24,8 +24,9 @@ with nothing to atlas.
 | --- | --- |
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
-| `Icons/` | 50 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
-| `Sounds/` | Ten short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`), all at one loudness. |
+| `Icons/` | 51 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
+| `Sounds/` | Twelve short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`), all at one loudness, and `buzz`, a quiet hum written to loop. |
+| `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
 
@@ -51,6 +52,16 @@ with nothing to atlas.
   start from: no minimum brightness, UV tile discard on the second UV set,
   and lilToon's Clipping Canceller switched on for the project. It also
   makes a surface mark the stencil where it is drawn (see below).
+- **`SignMesh`** builds a sign: flat artwork in palette colours, with
+  block capitals from a five by seven pixel face, that the shader turns to
+  face each viewer. **`WirenookPalette`** looks swatches up by name.
+- **`FeaturePrefab.AvatarMaterials`** gives a feature a stand-in for every
+  renderer on the avatar (`WirenookAvatarMaterials`). Material properties
+  animated on it are given, at build time, to each renderer that has a
+  material with the property, so a drop-in prefab can change how the whole
+  avatar is drawn without knowing its renderers.
+- **`WirenookSignals`** names the animator parameters that mean the same
+  thing in every package (`WN/Away`).
 - **`HandGrip`** fits hand-held props to an avatar from its finger bones.
 - **`WirenookSounds`** gives a feature one audio source and plays clips on
   it from animator states, all at one volume. Its `Gain` is the one number
@@ -67,6 +78,39 @@ A prop model is a skinned mesh with a small armature, exported to a
 package's `Models/` folder with its materials named `wirenook` and
 `wirenook-glow`. Its root bone sits at the hold point. `tools/blender/`
 has the Blender library the props are built and validated with.
+
+### The shader
+
+`ToonMaterial.Configure` sets materials up on `Wirenook/lilToon` (and
+`Hidden/Wirenook/lilToonOutline` where there is an outline): lilToon's
+opaque shader with this package's hooks compiled in, through lilToon's own
+custom shader mechanism (`Shaders/Toon/*.lilcontainer`, `custom.hlsl`,
+`custom_insert.hlsl`). Everything lilToon does, its inspector included, is
+unchanged. Three properties are added, all resting at nothing:
+
+- **`_WirenookGlitch`** (0 to 1) corrupts the mesh in the vertex stage:
+  level slices torn sideways, the surface snapped to a coarse grid in
+  bursts, a few vertices thrown out as spikes, re-rolled eleven times a
+  second and held in between. Measured in the avatar's own metres, so a
+  scaled avatar glitches in proportion.
+- **`_WirenookScreen`** (0 to 1) draws a blue error screen with a sad face
+  on the faces of one UV discard tile (`_WirenookScreenTile`), unlit.
+  Where on the screen a point is comes from the third UV set, which the
+  avatar's importer writes. cass uses it for its eyes.
+- **`_WirenookSign`** and **`_WirenookSignShow`** unfold a sign
+  (`SignMesh`): geometry whose vertices all rest at one pivot and carry
+  their place on the sign in the third UV set, and the sign's number and
+  layer in the fourth. The shader stands the sign `_WirenookSignReach`
+  metres out from the pivot towards the viewer and faces it to them (to
+  the point between the eyes in a headset), and folds it away for anyone
+  standing inside the avatar. One number shows at a time, so features
+  that each bring a sign share the avatar's mesh and material and take
+  turns. A sign is nothing at all wherever the shader is not this one: on
+  a client that blocks the avatar's shaders, and on Android and iOS.
+
+Because it is not one of lilToon's own shader names, tools that know
+lilToon by name treat these materials as unknown. Avatar Optimizer then
+keeps every vertex channel, which is what the signs need.
 
 ### The stencil bit
 
@@ -108,7 +152,9 @@ The sounds are synthesised from sine partials and filtered noise by
 ### How loud the sounds are
 
 `tools/sfx.py` writes every sound at the same loudness, so that features
-can play them all at one volume and none drowns another. The measure is the
+can play them all at one volume and none drowns another. (`buzz` is the
+exception: it is a bed to sit under other things, 10 dB down, and is
+written without faded ends so that it loops.) The measure is the
 level of a sound's loudest 200 ms after K-weighting (the filter of ITU-R
 BS.1770, which follows the ear better than plain RMS), and each sound is
 brought to -17 dB relative to full scale on it. The megaphone is 2 dB over

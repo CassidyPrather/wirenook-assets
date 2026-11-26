@@ -72,7 +72,12 @@ namespace Wirenook.Assets.Editor
         /// <summary>Plays a clip on the feature's source each time <paramref name="state"/> is entered.</summary>
         /// <param name="sourcePath">Animation path of the source object, relative to the merged controller's root.</param>
         /// <param name="volume">Leave out to play at the shared level; see <see cref="Volume"/>.</param>
-        public static void PlayOnEnter(StateBuilder state, string sourcePath, string clipName, float volume = Volume)
+        /// <param name="loop">
+        /// Play it round and round until the next sound on this source, or
+        /// <see cref="StopOnEnter"/>, replaces it. For the sounds tools/sfx.py
+        /// writes as loops.
+        /// </param>
+        public static void PlayOnEnter(StateBuilder state, string sourcePath, string clipName, float volume = Volume, bool loop = false)
         {
             var clip = Get(clipName);
             if (clip == null)
@@ -86,12 +91,25 @@ namespace Wirenook.Assets.Editor
                 play.Volume = new Vector2(volume, volume);
                 play.VolumeApplySettings = VRC_AnimatorPlayAudio.ApplySettings.AlwaysApply;
                 // A few cents of drift keeps repeated cues from sounding mechanical.
-                play.Pitch = new Vector2(0.97f, 1.03f);
+                play.Pitch = loop ? Vector2.one : new Vector2(0.97f, 1.03f);
                 play.PitchApplySettings = VRC_AnimatorPlayAudio.ApplySettings.AlwaysApply;
-                play.Loop = false;
+                play.Loop = loop;
                 play.LoopApplySettings = VRC_AnimatorPlayAudio.ApplySettings.AlwaysApply;
                 play.PlayOnEnter = true;
                 play.StopOnEnter = true;
+            });
+        }
+
+        /// <summary>Silences the feature's source each time <paramref name="state"/> is entered.</summary>
+        public static void StopOnEnter(StateBuilder state, string sourcePath)
+        {
+            state.Behaviour<VRCAnimatorPlayAudio>(play =>
+            {
+                play.SourcePath = sourcePath;
+                play.PlayOnEnter = false;
+                play.StopOnEnter = true;
+                play.LoopApplySettings = VRC_AnimatorPlayAudio.ApplySettings.AlwaysApply;
+                play.Loop = false;
             });
         }
     }

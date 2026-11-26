@@ -30,7 +30,11 @@ OUT = pathlib.Path(__file__).resolve().parents[1] / "Packages" / "net.wirenook.a
 LOUDNESS = -17.0
 
 # Sounds that are meant to stand out from the rest, in dB over LOUDNESS.
-TRIM = {"megaphone": 2.0}
+TRIM = {"megaphone": 2.0, "buzz": -10.0}
+
+# Sounds that play round and round. They are written so that the end runs
+# into the start, and are not faded at the ends.
+LOOPS = {"buzz"}
 
 # No sample goes above this, in dB relative to full scale. VRChat runs avatar
 # audio through a compressor and advises files normalised to between -6 and
@@ -184,6 +188,46 @@ def collect():
     return mix / np.max(np.abs(mix)) * 0.7
 
 
+def _device_note(frequency, delay, seconds):
+    """One note of the two-note device cues: a soft mallet with a little thump under it."""
+    length = seconds - delay
+    partials = tone(frequency, length) + 0.3 * tone(frequency * 2.0, length) + 0.08 * tone(frequency * 4.0, length)
+    voiced = partials * envelope(length, 0.004, min(length, 0.22), 2.2)
+    thump = tone(sweep(frequency * 0.5, frequency * 0.25, 0.05), 0.05) * envelope(0.05, 0.002, 0.045, 2) * 0.35
+    voiced[: len(thump)] += thump
+    return np.concatenate([np.zeros(int(RATE * delay)), voiced])[: int(RATE * seconds)]
+
+
+def unplug():
+    """Two notes stepping down: something that was connected has gone."""
+    seconds = 0.42
+    mix = _device_note(783.99, 0.0, seconds) + _device_note(523.25, 0.13, seconds)
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def plug():
+    """The same two notes stepping up: it is back."""
+    seconds = 0.42
+    mix = _device_note(523.25, 0.0, seconds) + _device_note(783.99, 0.13, seconds)
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def buzz():
+    """A low mains hum with a rasp in it, to loop under something that has stopped working."""
+    seconds = 1.0
+    # Whole numbers of cycles in the second, so the loop has no seam.
+    hum = sum(tone(55.0 * harmonic, seconds) * level
+              for harmonic, level in ((1, 1.0), (2, 0.55), (3, 0.4), (4, 0.18), (5, 0.22), (7, 0.1)))
+    flutter = 1 + 0.18 * tone(3.0, seconds) + 0.08 * tone(11.0, seconds)
+    # The rasp is noise, which has no period: its tail is folded over its head instead.
+    overlap = int(RATE * 0.12)
+    rasp = lowpass(noise(seconds + 0.12, 6), 900) * 2.0
+    rasp[:overlap] = rasp[:overlap] * np.linspace(0, 1, overlap) + rasp[-overlap:] * np.linspace(1, 0, overlap)
+    rasp = rasp[: int(RATE * seconds)] * (0.5 + 0.5 * np.clip(tone(110.0, seconds), 0, 1))
+    mix = hum * flutter * 0.5 + rasp * 0.35
+    return mix / np.max(np.abs(mix)) * 0.6
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "pop-out": pop_out,
@@ -195,6 +239,9 @@ SOUNDS = {
     "bonk": bonk,
     "poof": poof,
     "collect": collect,
+    "unplug": unplug,
+    "plug": plug,
+    "buzz": buzz,
 }
 
 
@@ -256,8 +303,9 @@ def finish(name, signal):
     # A few milliseconds of fade at both ends guarantees no click at the cut.
     edge = int(RATE * 0.003)
     signal = signal.copy()
-    signal[:edge] *= np.linspace(0, 1, edge)
-    signal[-edge:] *= np.linspace(1, 0, edge)
+    if name not in LOOPS:
+        signal[:edge] *= np.linspace(0, 1, edge)
+        signal[-edge:] *= np.linspace(1, 0, edge)
 
     gain = min(LOUDNESS + TRIM.get(name, 0.0) - loudness(signal), PEAK - peak(signal))
     return signal * 10 ** (gain / 20)

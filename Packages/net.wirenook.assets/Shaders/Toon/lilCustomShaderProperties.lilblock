@@ -1,0 +1,8 @@
+        //----------------------------------------------------------------------------------------------------------------------
+        // Wirenook (custom.hlsl beside this file says what each does)
+                        _WirenookGlitch             ("Glitch", Range(0, 1)) = 0
+                        _WirenookScreen             ("Screen", Range(0, 1)) = 0
+                        _WirenookScreenTile         ("Screen Tile", Float) = -1
+                        _WirenookSign               ("Sign", Float) = 0
+                        _WirenookSignShow           ("Sign Show", Range(0, 2)) = 0
+                        _WirenookSignReach          ("Sign Reach", Float) = 0.3

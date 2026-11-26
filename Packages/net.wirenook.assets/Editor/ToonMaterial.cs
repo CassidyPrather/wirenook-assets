@@ -14,7 +14,37 @@ namespace Wirenook.Assets.Editor
     /// </summary>
     public static class ToonMaterial
     {
-        public const string ShaderName = "lilToon";
+        /// <summary>
+        /// lilToon with this package's additions (Shaders/Toon): a glitch
+        /// that corrupts the mesh, an error screen for one UV tile, and
+        /// signs that face the viewer. All of them rest at nothing.
+        /// </summary>
+        public const string ShaderName = "Wirenook/lilToon";
+
+        /// <summary>The same with an outline pass; lilToon keeps its outlined shaders under Hidden too.</summary>
+        public const string OutlineShaderName = "Hidden/Wirenook/lilToonOutline";
+
+        /// <summary>How corrupted the mesh is drawn, 0 to 1.</summary>
+        public const string Glitch = "_WirenookGlitch";
+
+        /// <summary>How much of the error screen shows on the faces of <see cref="ScreenTile"/>, 0 to 1.</summary>
+        public const string Screen = "_WirenookScreen";
+
+        /// <summary>The UV tile drawn as a screen, column + 4 * row; -1 for none.</summary>
+        public const string ScreenTile = "_WirenookScreenTile";
+
+        /// <summary>
+        /// The UV set that says where on a screen a point is: (0,0) to (1,1)
+        /// across the picture. On a sign's vertices the same set holds their
+        /// place on the sign instead (<see cref="SignMesh"/>).
+        /// </summary>
+        public const int ScreenUvChannel = 2;
+
+        /// <summary>Which sign is out (see <see cref="SignMesh"/>); 0 for none.</summary>
+        public const string Sign = "_WirenookSign";
+
+        /// <summary>The size the sign that is out is drawn at: 0 folded away, 1 full size.</summary>
+        public const string SignShow = "_WirenookSignShow";
 
         /// <summary>The UV set that carries discard tiles; UV0 stays free for texturing.</summary>
         public const int TileUvChannel = 1;
@@ -53,7 +83,7 @@ namespace Wirenook.Assets.Editor
         public static void Configure(Material material, Texture2D palette, Texture2D emissionMask, bool doubleSided)
         {
             var shader = Shader.Find(ShaderName);
-            if (shader == null) throw new InvalidOperationException("lilToon is not installed (shader \"" + ShaderName + "\" not found).");
+            if (shader == null) throw new InvalidOperationException("The shader \"" + ShaderName + "\" was not found; is lilToon installed? It is built on it.");
             material.shader = shader;
 
             material.SetTexture("_MainTex", palette);

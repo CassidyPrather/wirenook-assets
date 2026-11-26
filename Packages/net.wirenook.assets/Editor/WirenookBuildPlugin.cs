@@ -92,6 +92,10 @@ namespace Wirenook.Assets.Editor
             });
             afterModularAvatar.WithRequiredExtension(typeof(AnimatorServicesContext), sequence =>
             {
+                // Before the join: what the body is given here, the join passes on to the props.
+                sequence.Run("Give avatar-wide material animation to every renderer", context =>
+                    SpreadAvatarMaterials(context.AvatarRootObject, context.Extension<AnimatorServicesContext>()));
+
                 sequence.Run("Join props to the avatar mesh", context =>
                 {
                     var joining = context.GetState<Joining>();
@@ -254,6 +258,45 @@ namespace Wirenook.Assets.Editor
             }
 
             return tiles.Any(tile => tile) ? tiles : null;
+        }
+
+        /// <summary>
+        /// Moves the material curves a feature has put on a
+        /// <see cref="WirenookAvatarMaterials"/> stand-in onto every renderer
+        /// of the avatar that has a material with the animated property, so
+        /// a drop-in prefab can change how the whole avatar is drawn without
+        /// knowing its renderers. Each renderer is given the same curves,
+        /// which also keeps them alike for an optimiser that merges meshes.
+        /// </summary>
+        private static void SpreadAvatarMaterials(GameObject avatar, AnimatorServicesContext animators)
+        {
+            const string prefix = "material.";
+            var renderers = avatar.GetComponentsInChildren<Renderer>(true)
+                .Where(renderer => renderer is SkinnedMeshRenderer || renderer is MeshRenderer)
+                .ToList();
+
+            foreach (var standIn in avatar.GetComponentsInChildren<WirenookAvatarMaterials>(true))
+            {
+                var path = animators.ObjectPathRemapper.GetVirtualPathForObject(standIn.gameObject);
+                foreach (var clip in animators.AnimationIndex.GetClipsForObjectPath(path).ToList())
+                {
+                    foreach (var binding in clip.GetFloatCurveBindings().ToList())
+                    {
+                        if (binding.path != path || !binding.propertyName.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                        var curve = clip.GetFloatCurve(binding);
+                        clip.SetFloatCurve(binding, null);
+
+                        // "material._Colour.r" animates one part of the property "_Colour".
+                        var property = binding.propertyName.Substring(prefix.Length).Split('.')[0];
+                        foreach (var renderer in renderers)
+                        {
+                            if (!renderer.sharedMaterials.Any(material => material != null && material.HasProperty(property))) continue;
+                            clip.SetFloatCurve(animators.ObjectPathRemapper.GetVirtualPathForObject(renderer.gameObject),
+                                renderer.GetType(), binding.propertyName, curve);
+                        }
+                    }
+                }
+            }
         }
 
         private static void Join(AnimatorServicesContext animators, Joining joining)

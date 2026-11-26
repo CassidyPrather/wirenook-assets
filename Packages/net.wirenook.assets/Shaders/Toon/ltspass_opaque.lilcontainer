@@ -1,0 +1,20 @@
+Shader "Hidden/*LIL_SHADER_NAME*/ltspass_opaque"
+{
+    Properties
+    {
+        lilProperties "Default"
+        lilProperties "DefaultOpaque"
+        lilProperties "lilCustomShaderProperties.lilblock"
+    }
+
+    HLSLINCLUDE
+        #define LIL_RENDER 0
+        #include "Packages/net.wirenook.assets/Shaders/Toon/custom.hlsl"
+    ENDHLSL
+
+    lilSubShaderInsert "lilCustomShaderInsert.lilblock"
+    lilSubShaderBRP "Default"
+    lilSubShaderLWRP "Default"
+    lilSubShaderURP "Default"
+    lilSubShaderHDRP "Default"
+}
