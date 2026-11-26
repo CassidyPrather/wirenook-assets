@@ -24,7 +24,7 @@ with nothing to atlas.
 | --- | --- |
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
-| `Icons/` | 32 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
+| `Icons/` | 50 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
 | `Sounds/` | Ten short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`), all at one loudness. |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
