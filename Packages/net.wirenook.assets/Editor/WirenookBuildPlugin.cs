@@ -97,6 +97,9 @@ namespace Wirenook.Assets.Editor
             });
             afterModularAvatar.WithRequiredExtension(typeof(AnimatorServicesContext), sequence =>
             {
+                sequence.Run("Share one audio source between features", context =>
+                    ShareSounds(context.AvatarRootObject, context.Extension<AnimatorServicesContext>()));
+
                 // Before the join: what the body is given here, the join passes on to the props.
                 sequence.Run("Give avatar-wide material animation to every renderer", context =>
                     SpreadAvatarMaterials(context.AvatarRootObject, context.Extension<AnimatorServicesContext>()));
@@ -263,6 +266,30 @@ namespace Wirenook.Assets.Editor
             }
 
             return tiles.Any(tile => tile) ? tiles : null;
+        }
+
+        /// <summary>
+        /// Keeps one of the audio sources marked <see cref="WirenookSharedSound"/>
+        /// and points every sound that played on another at it. Modular
+        /// Avatar has merged the animators by now, so each state's sound
+        /// names its source by its path on the avatar.
+        /// </summary>
+        private static void ShareSounds(GameObject avatar, AnimatorServicesContext animators)
+        {
+            var shared = avatar.GetComponentsInChildren<WirenookSharedSound>(true).Select(marker => marker.gameObject).ToList();
+            if (shared.Count < 2) return;
+            var keptPath = animators.ObjectPathRemapper.GetVirtualPathForObject(shared[0]);
+            var spare = new HashSet<GameObject>(shared.Skip(1));
+
+            var states = animators.ControllerContext.GetAllControllers()
+                .SelectMany(controller => controller.AllReachableNodes()).OfType<VirtualState>();
+            foreach (var play in states.SelectMany(state => state.Behaviours.OfType<VRC.SDK3.Avatars.Components.VRCAnimatorPlayAudio>()))
+            {
+                var source = animators.ObjectPathRemapper.GetObjectForPath(play.SourcePath);
+                if (source != null && spare.Contains(source)) play.SourcePath = keptPath;
+            }
+
+            foreach (var source in spare) UnityEngine.Object.DestroyImmediate(source);
         }
 
         /// <summary>

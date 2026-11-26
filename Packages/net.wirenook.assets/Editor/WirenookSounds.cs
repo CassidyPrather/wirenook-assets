@@ -50,9 +50,17 @@ namespace Wirenook.Assets.Editor
         /// The feature's audio source, created under <paramref name="parent"/>
         /// if missing.
         /// </summary>
-        public static AudioSource Source(GameObject parent)
+        /// <param name="shared">
+        /// Whether an avatar build may fold this source into one it keeps for
+        /// every feature (see <see cref="WirenookSharedSound"/>). Say false
+        /// for a source that stands somewhere in the world, or that loops.
+        /// </param>
+        public static AudioSource Source(GameObject parent, bool shared = true)
         {
             var holder = FeaturePrefab.Child(parent, SourceName);
+            var marker = holder.GetComponent<WirenookSharedSound>();
+            if (shared && marker == null) holder.AddComponent<WirenookSharedSound>();
+            if (!shared && marker != null) UnityEngine.Object.DestroyImmediate(marker);
             var source = FeaturePrefab.Ensure<AudioSource>(holder);
             source.playOnAwake = false;
             source.loop = false;

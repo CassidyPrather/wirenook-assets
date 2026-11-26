@@ -24,8 +24,8 @@ with nothing to atlas.
 | --- | --- |
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
-| `Icons/` | 51 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
-| `Sounds/` | Twelve short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`), all at one loudness, and `buzz`, a quiet hum written to loop. |
+| `Icons/` | 70 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
+| `Sounds/` | Seventeen short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`), all at one loudness, and `buzz`, a quiet hum written to loop. |
 | `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand, when it is held and how the fingers close on it; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
@@ -75,7 +75,12 @@ with nothing to atlas.
   described.
 - **`WirenookSounds`** gives a feature one audio source and plays clips on
   it from animator states, all at one volume. Its `Gain` is the one number
-  that makes every sound louder or quieter.
+  that makes every sound louder or quieter. A source made with it is
+  marked `WirenookSharedSound` unless told otherwise, and an avatar build
+  keeps one such source for all its features and points every sound at
+  it: VRChat ranks an avatar on how many sources it carries. Two cues
+  that land together cut one another off, so a source that stands in the
+  world or plays a loop is made with `shared: false` and kept.
 - **`FeatureTags`** (in `Runtime/Core`, engine-free and unit-tested) turns
   the features on an avatar into VRChat's tag list: required tags first,
   then features by priority, within the ten-tag limit.
@@ -109,13 +114,21 @@ unchanged. Three properties are added, all resting at nothing:
   avatar's importer writes. cass uses it for its eyes.
 - **`_WirenookSign`** and **`_WirenookSignShow`** unfold a sign
   (`SignMesh`): geometry whose vertices all rest at one pivot and carry
-  their place on the sign in the third UV set, and the sign's number and
-  layer in the fourth. The shader stands the sign `_WirenookSignReach`
-  metres out from the pivot towards the viewer and faces it to them (to
-  the point between the eyes in a headset), and folds it away for anyone
-  standing inside the avatar. One number shows at a time, so features
-  that each bring a sign share the avatar's mesh and material and take
-  turns. A sign is nothing at all wherever the shader is not this one: on
+  their place on the sign in the third UV set, and in the fourth the
+  sign's number and, packed into one value, its layer and how far out it
+  stands. The shader stands the sign that far from the pivot towards the
+  viewer and faces it to them (to the point between the eyes in a
+  headset), and folds it away for anyone standing inside the avatar.
+  There are three such pairs (`_WirenookSign`, `_WirenookSignB`,
+  `_WirenookSignC`), each showing one number at a time: the first is for
+  what the wearer is doing (away, busy), the second for what is happening
+  to the avatar (reactions), the third for what a tool has to say.
+  Features that share a pair take turns; the pairs do not wait on each
+  other. Numbers in use: 1 the AFK window (party-tricks), 10 to 22 the
+  contact reactions (contacts). A sign's number is stored negative,
+  because a mesh with no fourth UV set is given one of its lower sets in
+  its place when meshes are merged or drawn, and none of those is ever
+  negative. A sign is nothing at all wherever the shader is not this one: on
   a client that blocks the avatar's shaders, and on Android and iOS.
 
 Because it is not one of lilToon's own shader names, tools that know
