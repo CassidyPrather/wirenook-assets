@@ -72,6 +72,14 @@ with nothing to atlas.
   animated on it are given, at build time, to each renderer that has a
   material with the property, so a drop-in prefab can change how the whole
   avatar is drawn without knowing its renderers.
+- **`WirenookAway`**, **`WirenookAfk`** and **`WirenookAfkChoice`**: the
+  three ways an avatar shows its wearer is away (a nap, a crash, a
+  vanishing; they live in `net.wirenook.locomotion` and
+  `net.wirenook.party-tricks`) have their menu switch, their flavour
+  names and the hand-over of the body from tracking in common here. A
+  feature's root says which flavour it is; an avatar's root may say
+  which one it wants, with a second choice for Android and iOS, and the
+  build then leaves the others out with their parameters kept.
 - **`WirenookSignals`** names the animator parameters that mean the same
   thing in every package (`WN/Away`).
 - **`HandGrip`** fits hand-held props to an avatar from its finger bones.

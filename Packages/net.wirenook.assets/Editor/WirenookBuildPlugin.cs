@@ -57,6 +57,8 @@ namespace Wirenook.Assets.Editor
                 if (WirenookPlatform.IsMobile) RemovePcOnly(context.AvatarRootObject);
             });
 
+            beforeModularAvatar.Run("Keep the one away feature the avatar chose", context => KeepChosenAfk(context.AvatarRootObject));
+
             // Modular Avatar merges what this makes, and renumbers the layers
             // its behaviours name; after the mobile cut, so that a prop left
             // out of a mobile build closes no hand there.
@@ -132,20 +134,44 @@ namespace Wirenook.Assets.Editor
             {
                 // Already gone with a marked ancestor.
                 if (marker == null || marker.gameObject == avatar) continue;
-                var target = marker.gameObject;
-                var declared = target.GetComponentsInChildren<ModularAvatarParameters>(true)
-                    .SelectMany(component => component.parameters)
-                    .ToList();
-                if (declared.Count > 0)
-                {
-                    var stand = new GameObject(target.name);
-                    stand.transform.SetParent(target.transform.parent, false);
-                    stand.transform.SetSiblingIndex(target.transform.GetSiblingIndex());
-                    stand.AddComponent<ModularAvatarParameters>().parameters = declared;
-                }
-
-                UnityEngine.Object.DestroyImmediate(target);
+                LeaveOut(marker.gameObject);
             }
+        }
+
+        /// <summary>
+        /// Where the avatar says which way of being away it wants
+        /// (<see cref="WirenookAfkChoice"/>), leaves out every away feature
+        /// of another flavour. That is how a variant can differ from the one
+        /// it is made from, whose features it cannot take off, and how a
+        /// mobile build can do something a mobile shader is able to draw.
+        /// </summary>
+        private static void KeepChosenAfk(GameObject avatar)
+        {
+            var choice = avatar.GetComponent<WirenookAfkChoice>();
+            if (choice == null) return;
+            var wanted = choice.For(WirenookPlatform.IsMobile);
+            foreach (var marker in avatar.GetComponentsInChildren<WirenookAfk>(true))
+            {
+                if (marker == null || marker.gameObject == avatar || marker.flavour == wanted) continue;
+                LeaveOut(marker.gameObject);
+            }
+        }
+
+        /// <summary>Removes an object, leaving in its place an empty one that declares the same expression parameters.</summary>
+        private static void LeaveOut(GameObject target)
+        {
+            var declared = target.GetComponentsInChildren<ModularAvatarParameters>(true)
+                .SelectMany(component => component.parameters)
+                .ToList();
+            if (declared.Count > 0)
+            {
+                var stand = new GameObject(target.name);
+                stand.transform.SetParent(target.transform.parent, false);
+                stand.transform.SetSiblingIndex(target.transform.GetSiblingIndex());
+                stand.AddComponent<ModularAvatarParameters>().parameters = declared;
+            }
+
+            UnityEngine.Object.DestroyImmediate(target);
         }
 
         /// <summary>

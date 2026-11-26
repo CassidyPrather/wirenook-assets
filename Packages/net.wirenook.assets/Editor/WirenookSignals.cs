@@ -20,5 +20,14 @@ namespace Wirenook.Assets.Editor
 
         /// <summary>VRChat's own flag for a wearer who has stepped away. It syncs it itself.</summary>
         public const string Afk = "AFK";
+
+        /// <summary>
+        /// Above a half while the avatar is asleep on its feet: the nap of
+        /// net.wirenook.locomotion writes it from an animation, on every
+        /// client, and it is in no expression parameter list. An avatar's
+        /// animator declares it as a float to read it (closed eyes, say)
+        /// and finds it at nought wherever nothing naps.
+        /// </summary>
+        public const string Asleep = "WN/Asleep";
     }
 }
