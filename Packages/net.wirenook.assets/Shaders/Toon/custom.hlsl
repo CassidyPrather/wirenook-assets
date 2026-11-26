@@ -52,7 +52,7 @@
     float _WirenookSignCShow;
 
 #define LIL_CUSTOM_VERTEX_OS \
-    wirenookVertex(positionOS, input.uv2, input.uv3, input.vertexID);
+    wirenookVertex(positionOS, input.uv2, input.uv3, WIRENOOK_VERTEX_ID(input));
 
 // lilToon's passes that shade a surface fill `fd`; the others (shadows,
 // depth) have no colour to replace.

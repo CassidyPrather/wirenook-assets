@@ -3,6 +3,15 @@
 #ifndef WIRENOOK_TOON_INCLUDED
 #define WIRENOOK_TOON_INCLUDED
 
+// lilToon leaves the vertex id out of the vertex data where a platform
+// cannot supply it (it says so before this file is read). The glitch then
+// tells vertices apart by where they are.
+#if defined(LIL_NOT_SUPPORT_VERTEXID)
+    #define WIRENOOK_VERTEX_ID(input) 0u
+#else
+    #define WIRENOOK_VERTEX_ID(input) input.vertexID
+#endif
+
 float wirenookHash(float2 seed)
 {
     return frac(sin(dot(seed, float2(127.1, 311.7))) * 43758.5453);
@@ -76,7 +85,11 @@ void wirenookGlitch(inout float4 positionOS, uint vertexID)
     position += float3(cos(turn), 0.0, sin(turn)) * torn * (0.04 + 0.2 * roll.y) * amount;
 
     // Spikes: a vertex in a few hundred is thrown clear, dragging its triangles with it.
-    float2 id = float2(float(vertexID % 4096u), float(vertexID / 4096u));
+    #if defined(LIL_NOT_SUPPORT_VERTEXID)
+        float2 id = floor(positionOS.xy * 613.0) + floor(positionOS.z * 211.0);
+    #else
+        float2 id = float2(float(vertexID % 4096u), float(vertexID / 4096u));
+    #endif
     float3 thrown = wirenookHash3(id + floor(_Time.y * 6.0) * float2(7.31, 3.17));
     float spike = step(1.0 - 0.006 * amount, thrown.x);
     position += normalize(wirenookHash3(id * 1.7 + 0.5) - 0.5) * spike * (0.1 + 0.3 * thrown.y) * amount;
