@@ -59,6 +59,9 @@ namespace Wirenook.Assets.Editor
 
             beforeModularAvatar.Run("Keep the one away feature the avatar chose", context => KeepChosenAfk(context.AvatarRootObject));
 
+            // After the two above: a feature that has just been left out stands in for nothing.
+            beforeModularAvatar.Run("Leave out features another feature replaces", context => RemoveReplaced(context.AvatarRootObject));
+
             // Modular Avatar merges what this makes, and renumbers the layers
             // its behaviours name; after the mobile cut, so that a prop left
             // out of a mobile build closes no hand there.
@@ -154,6 +157,24 @@ namespace Wirenook.Assets.Editor
             {
                 if (marker == null || marker.gameObject == avatar || marker.flavour == wanted) continue;
                 LeaveOut(marker.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Leaves out every feature that another feature on the avatar says
+        /// it stands in for (<see cref="WirenookReplaces"/>).
+        /// </summary>
+        private static void RemoveReplaced(GameObject avatar)
+        {
+            var replaced = new HashSet<string>(avatar.GetComponentsInChildren<WirenookReplaces>(true).SelectMany(marker => marker.features));
+            if (replaced.Count == 0) return;
+            foreach (var feature in avatar.GetComponentsInChildren<WirenookFeature>(true))
+            {
+                if (feature == null || feature.gameObject == avatar || !replaced.Contains(feature.id)) continue;
+                // One that replaces itself by name would otherwise remove itself.
+                var own = feature.GetComponent<WirenookReplaces>();
+                if (own != null && own.features.Contains(feature.id)) continue;
+                LeaveOut(feature.gameObject);
             }
         }
 

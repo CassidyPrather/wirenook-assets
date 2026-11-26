@@ -72,6 +72,10 @@ with nothing to atlas.
   animated on it are given, at build time, to each renderer that has a
   material with the property, so a drop-in prefab can change how the whole
   avatar is drawn without knowing its renderers.
+- **`WirenookReplaces`** on a feature's root names other features, by
+  id, that it stands in for; a build that has it leaves those out, with
+  their parameters kept. For an avatar made from another avatar, which
+  cannot take off what that one carries.
 - **`WirenookAway`**, **`WirenookAfk`** and **`WirenookAfkChoice`**: the
   three ways an avatar shows its wearer is away (a nap, a crash, a
   vanishing; they live in `net.wirenook.locomotion` and
