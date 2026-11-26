@@ -66,7 +66,7 @@ with nothing to atlas.
 - **`StateBuilder.SpeedFrom`** and **`TransitionBuilder.StartAt`**: a
   state whose clip runs at a rate held in a parameter, backwards below
   zero, and a transition that enters a state partway through. Together
-  they make a bar that fills and drains (net.wirenook.skill-checks).
+  they make a bar that fills and drains (the skill checks of net.wirenook.contacts).
 - **`FeaturePrefab.AvatarMaterials`** gives a feature a stand-in for every
   renderer on the avatar (`WirenookAvatarMaterials`). Material properties
   animated on it are given, at build time, to each renderer that has a
