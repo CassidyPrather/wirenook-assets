@@ -242,6 +242,18 @@ namespace Wirenook.Assets.Editor
             return this;
         }
 
+        /// <summary>
+        /// Multiplies the state's speed by a float parameter. Below zero the
+        /// clip runs backwards, so one state can fill and drain something
+        /// and turn round wherever it happens to be.
+        /// </summary>
+        public StateBuilder SpeedFrom(string parameter)
+        {
+            State.speedParameterActive = true;
+            State.speedParameter = parameter;
+            return this;
+        }
+
         /// <summary>Drives the clip's playhead from a float parameter instead of time.</summary>
         public StateBuilder MotionTime(string parameter)
         {
@@ -279,6 +291,7 @@ namespace Wirenook.Assets.Editor
         private AnimatorStateTransition _current;
         private float _duration;
         private float _exitTime = -1f;
+        private float _offset;
 
         internal TransitionBuilder(Func<AnimatorStateTransition> create)
         {
@@ -293,7 +306,15 @@ namespace Wirenook.Assets.Editor
             _current.exitTime = Mathf.Max(_exitTime, 0f);
             _current.hasFixedDuration = true;
             _current.duration = _duration;
-            _current.offset = 0f;
+            _current.offset = _offset;
+        }
+
+        /// <summary>Enters the destination state this far into it, as a normalised time.</summary>
+        public TransitionBuilder StartAt(float normalizedTime)
+        {
+            _offset = normalizedTime;
+            _current.offset = normalizedTime;
+            return this;
         }
 
         public TransitionBuilder Fade(float seconds)
