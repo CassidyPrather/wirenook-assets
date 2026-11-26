@@ -9,3 +9,5 @@
                         _WirenookSignBShow          ("Sign B Show", Range(0, 2)) = 0
                         _WirenookSignC              ("Sign C", Float) = 0
                         _WirenookSignCShow          ("Sign C Show", Range(0, 2)) = 0
+                        _WirenookParts              ("Parts", Vector) = (1, 1, 1, 1)
+                        _WirenookPartsSway          ("Parts Sway", Range(0, 1)) = 0

@@ -60,6 +60,15 @@ namespace Wirenook.Assets.Editor
         public const string SignC = "_WirenookSignC";
         public const string SignCShow = "_WirenookSignCShow";
 
+        /// <summary>
+        /// Four amounts, one for each part of a one-piece prop: how far
+        /// each has grown out of its point (see <see cref="OnePieceProp"/>).
+        /// </summary>
+        public const string Parts = "_WirenookParts";
+
+        /// <summary>How far the parts of a one-piece prop lean to and fro, in metres for each metre above their point.</summary>
+        public const string PartsSway = "_WirenookPartsSway";
+
         /// <summary>The UV set that carries discard tiles; UV0 stays free for texturing.</summary>
         public const int TileUvChannel = 1;
 

@@ -61,6 +61,19 @@ void wirenookSign(inout float4 positionOS, float2 place, float2 which)
     positionOS.xyz = mul(LIL_MATRIX_I_M, float4(position, 1.0)).xyz;
 }
 
+// A part's vertex leaves the point it is stored at for its own place, as far
+// as its part's amount says.
+void wirenookPart(inout float4 positionOS, float2 place, float2 which)
+{
+    float number = -which.x;
+    float4 mine = float4(abs(number - 1.0) < 0.5, abs(number - 2.0) < 0.5, abs(number - 3.0) < 0.5, abs(number - 4.0) < 0.5);
+    float3 offset = float3(place.x, place.y, -which.y - 16.0);
+    // Two speeds that never line up, and each part out of step with the others.
+    float2 lean = float2(sin(_Time.y * 6.3 + number * 1.7), cos(_Time.y * 4.9 + number * 2.3));
+    offset.xz += lean * _WirenookPartsSway * max(offset.y, 0.0);
+    positionOS.xyz += offset * dot(mine, _WirenookParts);
+}
+
 void wirenookGlitch(inout float4 positionOS, uint vertexID)
 {
     float amount = saturate(_WirenookGlitch);
@@ -104,8 +117,15 @@ void wirenookVertex(inout float4 positionOS, float2 place, float2 which, uint ve
     // optimisers that merge meshes alike, and none of those is ever negative.
     if (which.x < -0.5)
     {
-        // A sign stays whole while the figure behind it falls apart: it is what says why.
-        wirenookSign(positionOS, place, which);
+        if (which.y < -0.5)
+        {
+            wirenookPart(positionOS, place, which);
+        }
+        else
+        {
+            // A sign stays whole while the figure behind it falls apart: it is what says why.
+            wirenookSign(positionOS, place, which);
+        }
     }
     else if (_WirenookGlitch > 0.0)
     {

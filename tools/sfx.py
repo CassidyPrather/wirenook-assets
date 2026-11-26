@@ -285,8 +285,47 @@ def boing():
     return mix / np.max(np.abs(mix)) * 0.75
 
 
+def crackle():
+    """A small fire: a low breath of flame with dry snaps over it, to loop while something burns."""
+    seconds = 2.0
+    samples = int(RATE * seconds)
+    # Noise has no period, so each layer's tail is folded over its head and the loop has no seam.
+    overlap = int(RATE * 0.2)
+
+    def seamless(signal):
+        signal = signal.copy()
+        signal[:overlap] = signal[:overlap] * np.linspace(0, 1, overlap) + signal[-overlap:] * np.linspace(1, 0, overlap)
+        return signal[:samples]
+
+    breath = seamless(lowpass(noise(seconds + 0.2, 21), 420)) * (1 + 0.3 * tone(1.5, seconds) + 0.15 * tone(4.0, seconds))
+    # Snaps: a handful of very short bright clicks, none of them near the seam.
+    snaps = np.zeros(samples)
+    random = np.random.default_rng(22)
+    for start in random.uniform(0.1, seconds - 0.15, 14):
+        length = int(RATE * random.uniform(0.004, 0.018))
+        at = int(RATE * start)
+        burst = random.uniform(-1, 1, length) * np.linspace(1, 0, length) ** 2
+        snaps[at:at + length] += burst * random.uniform(0.35, 1.0)
+    snaps = snaps - lowpass(snaps, 1500)
+    mix = breath * 1.6 + snaps * 0.9
+    return mix / np.max(np.abs(mix)) * 0.5
+
+
+def nom():
+    """A bite: a soft clap of the mouth closing and a small pleased note after it."""
+    seconds = 0.3
+    chomp = lowpass(noise(0.05, 23), 1800) * envelope(0.05, 0.002, 0.045, 2)
+    chomp = np.concatenate([chomp, np.zeros(int(RATE * seconds) - len(chomp))])
+    note = tone(sweep(330, 262, 0.2), 0.2) * envelope(0.2, 0.01, 0.18, 2)
+    note = np.concatenate([np.zeros(int(RATE * 0.07)), note, np.zeros(int(RATE * seconds))])[: int(RATE * seconds)]
+    mix = chomp * 1.4 + note * 0.6
+    return mix / np.max(np.abs(mix)) * 0.6
+
+
 SOUNDS = {
     "pop-in": pop_in,
+    "crackle": crackle,
+    "nom": nom,
     "pop-out": pop_out,
     "click": click,
     "chime": chime,

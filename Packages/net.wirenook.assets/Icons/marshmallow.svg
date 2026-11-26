@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wirenook radial-menu icon. Grid, stroke and colour rules: README.md beside this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>marshmallow</title>
+  <defs>
+    <style>
+      .body, .soft, .glow, .warm { stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .body { fill: #d7fbff; }
+      .soft { fill: #b9a8ff; }
+      .glow { fill: #ff00e6; }
+      .warm { fill: #ff6600; }
+      .mark { fill: none; stroke: #271452; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
+      .dot { fill: #271452; }
+      .edge, .core { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+      .edge { stroke: #271452; stroke-width: 28; }
+      .core { stroke: #d7fbff; stroke-width: 12; }
+      .limb.edge { stroke-width: 38; }
+      .limb.core { stroke-width: 22; }
+      .core.soft { stroke: #b9a8ff; }
+      .core.glow { stroke: #ff00e6; }
+      .core.warm { stroke: #ff6600; }
+      .solid.edge { fill: #271452; stroke-width: 16; }
+      .solid.core { fill: #d7fbff; stroke: none; }
+      .solid.core.soft { fill: #b9a8ff; }
+      .solid.core.glow { fill: #ff00e6; }
+      .solid.core.warm { fill: #ff6600; }
+    </style>
+    <!-- The hard violet extrusion every icon shares: the silhouette swept 8 px down-right. -->
+    <filter id="extrude" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#6d2c95"/>
+      <feComposite in2="SourceAlpha" operator="in" result="silhouette"/>
+      <feOffset in="silhouette" dx="4" dy="4" result="near"/>
+      <feOffset in="silhouette" dx="8" dy="8" result="far"/>
+      <feMerge>
+        <feMergeNode in="far"/>
+        <feMergeNode in="near"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#extrude)">
+    <path class="mark" d="M 28,220 L 96,156"/>
+    <path class="body" d="M 104,72 Q 136,48 168,72 L 192,96 Q 212,124 188,152 L 164,176 Q 136,196 108,172 L 84,148 Q 64,120 88,92 Z"/>
+    <path class="warm" d="M 104,72 Q 136,48 168,72 L 192,96 Q 200,108 200,120 Q 160,120 136,96 Q 116,84 104,72 Z"/>
+    <path class="mark" d="M 192,60 L 216,36"/>
+    <path class="mark" d="M 180,44 L 180,26"/>
+    <path class="mark" d="M 208,76 L 222,76"/>
+  </g>
+</svg>

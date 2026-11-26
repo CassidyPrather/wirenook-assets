@@ -24,8 +24,8 @@ with nothing to atlas.
 | --- | --- |
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
-| `Icons/` | 70 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
-| `Sounds/` | Seventeen short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`), all at one loudness, and `buzz`, a quiet hum written to loop. |
+| `Icons/` | 73 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
+| `Sounds/` | Eighteen short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`, `nom`), all at one loudness, and two written to loop: `buzz`, a quiet hum, and `crackle`, a small fire. |
 | `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand, when it is held and how the fingers close on it; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
@@ -55,6 +55,18 @@ with nothing to atlas.
 - **`SignMesh`** builds a sign: flat artwork in palette colours, with
   block capitals from a five by seven pixel face, that the shader turns to
   face each viewer. **`WirenookPalette`** looks swatches up by name.
+- **`OnePieceProp`** rebuilds a prop model as one plain mesh, for a prop
+  that is left in the world by an avatar with no material slots to spare.
+  `RigidProp` gives every bone's faces a mesh of their own, which is a
+  slot each; this folds up to four parts into the root's mesh, each
+  collapsed to its bone, and the shader unfolds them by the amounts in
+  `_WirenookParts`. A part can then only grow from its point and shrink
+  back: it cannot move or turn. PC only, since no mobile shader unfolds
+  anything.
+- **`StateBuilder.SpeedFrom`** and **`TransitionBuilder.StartAt`**: a
+  state whose clip runs at a rate held in a parameter, backwards below
+  zero, and a transition that enters a state partway through. Together
+  they make a bar that fills and drains (net.wirenook.skill-checks).
 - **`FeaturePrefab.AvatarMaterials`** gives a feature a stand-in for every
   renderer on the avatar (`WirenookAvatarMaterials`). Material properties
   animated on it are given, at build time, to each renderer that has a
@@ -112,6 +124,11 @@ unchanged. Three properties are added, all resting at nothing:
   on the faces of one UV discard tile (`_WirenookScreenTile`), unlit.
   Where on the screen a point is comes from the third UV set, which the
   avatar's importer writes. cass uses it for its eyes.
+- **`_WirenookParts`** holds four amounts, and grows part 1 to 4 of a
+  one-piece prop (`OnePieceProp`) out of its point by that much.
+  **`_WirenookPartsSway`** leans the parts to and fro, more the higher
+  above its point a vertex is, so a flame's tips move and its foot does
+  not.
 - **`_WirenookSign`** and **`_WirenookSignShow`** unfold a sign
   (`SignMesh`): geometry whose vertices all rest at one pivot and carry
   their place on the sign in the third UV set, and in the fourth the

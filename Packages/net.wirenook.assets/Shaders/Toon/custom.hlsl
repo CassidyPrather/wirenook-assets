@@ -4,7 +4,7 @@
 // hooks do is in custom_insert.hlsl, which is included after lilToon's
 // common code, where Unity's variables and lilToon's helpers exist.
 //
-// Three things are added. Each rests at zero and then costs a comparison.
+// Four things are added. Each rests at zero and then costs a comparison.
 //
 // _WirenookGlitch (0..1). Corrupts the mesh: horizontal slices torn sideways,
 //   the whole surface snapped to a coarse grid in bursts, and a few vertices
@@ -34,6 +34,19 @@
 //   material and take turns. The pairs are for kinds of thing that should
 //   not have to take turns with each other; ToonMaterial says which is
 //   which.
+//
+// _WirenookParts (four amounts, 0..1 and a little over). A part is a piece
+//   of a rigid mesh that grows out of a point: a flame out of its logs. A
+//   mesh for each such piece is a material slot for each, and slots are what
+//   a prop left standing in the world costs an avatar; this way the prop is
+//   one mesh. A part's vertices all sit at its point in the mesh and carry
+//   where they belong from there: right and up in the third UV set, and in
+//   the fourth which part they are, negated as a sign's number is (-1 to
+//   -4), and how far forward, as -(metres + 16), which is what tells a part
+//   from a sign. Part n is drawn at the size the nth amount says.
+//   _WirenookPartsSway leans every part to and fro, more the higher above
+//   its point a vertex is (metres of lean for each metre of height): a
+//   flame's tips move and its foot stays put. OnePieceProp makes such meshes.
 
 #define LIL_REQUIRE_APP_TEXCOORD1
 #define LIL_REQUIRE_APP_TEXCOORD2
@@ -49,7 +62,9 @@
     float _WirenookSignB; \
     float _WirenookSignBShow; \
     float _WirenookSignC; \
-    float _WirenookSignCShow;
+    float _WirenookSignCShow; \
+    float4 _WirenookParts; \
+    float _WirenookPartsSway;
 
 #define LIL_CUSTOM_VERTEX_OS \
     wirenookVertex(positionOS, input.uv2, input.uv3, WIRENOOK_VERTEX_ID(input));
