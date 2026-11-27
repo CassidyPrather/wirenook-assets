@@ -50,6 +50,7 @@ scripts/build-packages.sh      # VPM .zip + .unitypackage per package -> dist/
 
 ## House Rules
 
+- A colour the wearer chooses is the signature colour (`WirenookSignature`, README): paint in `#73f3ff` and its shades, mask the texels or declare `_WirenookSignature` in the shader, and the build drives it from `WN/Signature`. Never a second hue parameter, and never a renderer path: the stand-in spreads it.
 - Every asset gets a `CREDITS.md` line at intake — source, author, license, URL. CC0 first.
 - Nothing proprietary and nothing licence-incompatible enters this repository; generate or draw it instead.
 - Unity editor stays on 2022.3.22f1, the version VRChat supports. Runtime Unity packages in `Packages/manifest.json` (Timeline, TextMeshPro, AI Navigation, uGUI) stay at the versions the VRChat client ships. Only editor-only tooling (IDE integrations, Test Framework) tracks the latest.

@@ -4,7 +4,7 @@
 // hooks do is in custom_insert.hlsl, which is included after lilToon's
 // common code, where Unity's variables and lilToon's helpers exist.
 //
-// Four things are added. Each rests at zero and then costs a comparison.
+// Five things are added. Each rests at zero and then costs a comparison.
 //
 // _WirenookGlitch (0..1). Corrupts the mesh: horizontal slices torn sideways,
 //   the whole surface snapped to a coarse grid in bursts, and a few vertices
@@ -47,6 +47,16 @@
 //   _WirenookPartsSway leans every part to and fro, more the higher above
 //   its point a vertex is (metres of lean for each metre of height): a
 //   flame's tips move and its foot stays put. OnePieceProp makes such meshes.
+//
+// _WirenookSignature (0..1) and _WirenookSignatureMask. The signature colour:
+//   the one colour a wearer chooses in game (Editor/WirenookSignature.cs). The
+//   amount is a share of a full turn of the hue, and it turns the texels the
+//   mask is white on, which are the ones painted in the signature colour.
+//   The mask is read with the main texture's coordinates and sampler, so a
+//   pixel-art atlas and its mask line up texel for texel. It is done to the
+//   surface's own colour before anything is lit, so shading, and a glow that
+//   takes the surface's colour, follow. No mask, or no turn, costs nothing.
+//   Shaders/WirenookSignature.hlsl has the arithmetic, for other shaders.
 
 #define LIL_REQUIRE_APP_TEXCOORD1
 #define LIL_REQUIRE_APP_TEXCOORD2
@@ -64,10 +74,18 @@
     float _WirenookSignC; \
     float _WirenookSignCShow; \
     float4 _WirenookParts; \
-    float _WirenookPartsSway;
+    float _WirenookPartsSway; \
+    float _WirenookSignature;
+
+#define LIL_CUSTOM_TEXTURES \
+    TEXTURE2D(_WirenookSignatureMask);
 
 #define LIL_CUSTOM_VERTEX_OS \
     wirenookVertex(positionOS, input.uv2, input.uv3, WIRENOOK_VERTEX_ID(input));
+
+// After the surface's own colour is read, and before a second layer, shading or glow.
+#define BEFORE_MAIN2ND \
+    wirenookSignature(fd.col.rgb, fd.uvMain);
 
 // lilToon's passes that shade a surface fill `fd`; the others (shadows,
 // depth) have no colour to replace.

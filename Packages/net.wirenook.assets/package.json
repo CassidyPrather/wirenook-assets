@@ -1,7 +1,7 @@
 {
   "name": "net.wirenook.assets",
   "displayName": "Wirenook Assets",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "unity": "2022.3",
   "description": "Shared wirenook.net palette, materials, menu icons and sounds for VRChat avatar components.",
   "author": {

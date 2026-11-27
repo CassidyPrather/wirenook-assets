@@ -3,6 +3,8 @@
 #ifndef WIRENOOK_TOON_INCLUDED
 #define WIRENOOK_TOON_INCLUDED
 
+#include "Packages/net.wirenook.assets/Shaders/WirenookSignature.hlsl"
+
 // lilToon leaves the vertex id out of the vertex data where a platform
 // cannot supply it (it says so before this file is read). The glitch then
 // tells vertices apart by where they are.
@@ -131,6 +133,14 @@ void wirenookVertex(inout float4 positionOS, float2 place, float2 which, uint ve
     {
         wirenookGlitch(positionOS, vertexID);
     }
+}
+
+void wirenookSignature(inout float3 colour, float2 uv)
+{
+    if (_WirenookSignature <= 0.0) return;
+    float painted = LIL_SAMPLE_2D(_WirenookSignatureMask, sampler_MainTex, uv).r;
+    if (painted <= 0.0) return;
+    colour = lerp(colour, wirenookSignatureTurn(colour, _WirenookSignature), painted);
 }
 
 // An eight by eight sad face, a row per entry from the top, a bit per pixel from the left.

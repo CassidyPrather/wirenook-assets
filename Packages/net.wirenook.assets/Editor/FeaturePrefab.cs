@@ -229,6 +229,19 @@ namespace Wirenook.Assets.Editor
             };
         }
 
+        /// <summary>An amount from 0 to 1 that every viewer sees; costs eight synced bits.</summary>
+        public static ParameterConfig SyncedFloat(string name, float defaultValue = 0f, bool saved = false)
+        {
+            return new ParameterConfig
+            {
+                nameOrPrefix = name,
+                syncType = ParameterSyncType.Float,
+                defaultValue = defaultValue,
+                hasExplicitDefaultValue = true,
+                saved = saved,
+            };
+        }
+
         /// <summary>Puts the menu items on this object (and its children) into the avatar's menu.</summary>
         public static void InstallMenu(GameObject holder)
         {
@@ -244,6 +257,29 @@ namespace Wirenook.Assets.Editor
         public static void MenuButton(GameObject holder, string label, string icon, string parameter, float value = 1f)
         {
             MenuControl(holder, label, icon, VRCExpressionsMenu.Control.ControlType.Button, parameter, value);
+        }
+
+        /// <summary>
+        /// A dial: the wearer turns it to set a float parameter anywhere
+        /// from 0 to 1. <paramref name="saved"/> keeps what they set from
+        /// one wearing of the avatar to the next.
+        /// </summary>
+        public static void MenuRadial(GameObject holder, string label, string icon, string parameter, bool saved = false)
+        {
+            var item = Ensure<ModularAvatarMenuItem>(holder);
+            item.label = label;
+            item.Control = new VRCExpressionsMenu.Control
+            {
+                name = label,
+                icon = WirenookIcons.Get(icon),
+                type = VRCExpressionsMenu.Control.ControlType.RadialPuppet,
+                // Nothing is set while the dial is merely open; the amount is its one sub-parameter.
+                parameter = new VRCExpressionsMenu.Control.Parameter { name = "" },
+                subParameters = new[] { new VRCExpressionsMenu.Control.Parameter { name = parameter } },
+                value = 1f,
+            };
+            item.isSynced = true;
+            item.isSaved = saved;
         }
 
         /// <summary>A submenu made of the menu items on this object's children.</summary>

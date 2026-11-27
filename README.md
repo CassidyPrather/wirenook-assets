@@ -24,9 +24,10 @@ with nothing to atlas.
 | --- | --- |
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
-| `Icons/` | 73 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
+| `Icons/` | 74 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
 | `Sounds/` | Eighteen short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`, `nom`), all at one loudness, and two written to loop: `buzz`, a quiet hum, and `crackle`, a small fire. |
 | `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
+| `Prefabs/` | `Wirenook Signature`: the dial for the colour its wearer chooses. See [The signature colour](#the-signature-colour). |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand, when it is held and how the fingers close on it; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
 | `Editor/` | The helpers listed below. |
 
@@ -72,6 +73,11 @@ with nothing to atlas.
   animated on it are given, at build time, to each renderer that has a
   material with the property, so a drop-in prefab can change how the whole
   avatar is drawn without knowing its renderers.
+- **`WirenookSignature`** is the signature colour: the parameter, the
+  material property, the mask and the layer. See
+  [The signature colour](#the-signature-colour).
+  **`FeaturePrefab.SyncedFloat`** declares a synced amount and
+  **`FeaturePrefab.MenuRadial`** puts a dial for one in the menu.
 - **`WirenookReplaces`** on a feature's root names other features, by
   id, that it stands in for; a build that has it leaves those out, with
   their parameters kept. For an avatar made from another avatar, which
@@ -141,6 +147,9 @@ unchanged. Three properties are added, all resting at nothing:
   **`_WirenookPartsSway`** leans the parts to and fro, more the higher
   above its point a vertex is, so a flame's tips move and its foot does
   not.
+- **`_WirenookSignature`** (0 to 1) turns the hue of the texels
+  `_WirenookSignatureMask` is white on: the colour the wearer chose.
+  See [The signature colour](#the-signature-colour).
 - **`_WirenookSign`** and **`_WirenookSignShow`** unfold a sign
   (`SignMesh`): geometry whose vertices all rest at one pivot and carry
   their place on the sign in the third UV set, and in the fourth the
@@ -163,6 +172,58 @@ unchanged. Three properties are added, all resting at nothing:
 Because it is not one of lilToon's own shader names, tools that know
 lilToon by name treat these materials as unknown. Avatar Optimizer then
 keeps every vertex channel, which is what the signs need.
+
+### The signature colour
+
+One colour that the wearer chooses in game, and that the trim of their
+avatar and everything it carries or sets down then takes. It is a
+convention, so that an avatar and a tool from another package agree on
+the colour without knowing each other (`WirenookSignature`):
+
+- **One parameter**, `WN/Signature`: a synced, saved float from 0 to 1,
+  eight bits. It is how far the hue is turned from the painted one, as a
+  share of a full turn; 0 shows the paint as it is.
+- **One feature**, `Prefabs/Wirenook Signature.prefab`, which declares
+  the parameter, puts a dial called "Colour" in the menu and carries the
+  layer that applies it. An avatar wants exactly one. It costs the eight
+  bits and one FX layer and nothing else.
+- **One material property**, `_WirenookSignature`, a Range from 0 to 1
+  resting at 0, that any shader may declare. The layer animates it on the
+  stand-in for the avatar's renderers (`FeaturePrefab.AvatarMaterials`),
+  and the build gives it to every renderer whose material has it:
+  skinned and static meshes, trails, lines and particle systems alike.
+- **One painted colour**, `#73f3ff` (a cyan, hue 185 degrees), and
+  lighter and darker shades of that hue. What follows the signature is
+  painted so, and a shader turns it. On `Wirenook/lilToon` a texture,
+  `_WirenookSignatureMask`, is white on the texels that are
+  (`WirenookSignature.Paint` sets it); it is read with the main texture's
+  coordinates and sampler, so a pixel-art atlas and its mask line up. The
+  turn is made to the surface's own colour before it is lit, so shading
+  follows, and so does a glow that takes its colour from the surface,
+  which is how `ToonMaterial.Configure` sets glow up. A shader for
+  something made of light alone includes `Shaders/WirenookSignature.hlsl`
+  and asks for `wirenookSignatureColour(_WirenookSignature)`.
+
+The turn is a rotation of the colour about the grey axis in linear light
+(`SignatureColour` in `Runtime/Core`, with tests; `WirenookSignature.Colour`
+gives the result as a `Color` for a preview). It is not a turn in HSV: a
+third of a turn swaps the channels round exactly, and in between a colour
+may brighten or dim a little. It was chosen because it is what the hue
+shift of VRChat's mobile Toon Standard shader does.
+
+**On Android and iOS** a solid material with a mask becomes Toon Standard
+in the build instead of Toon Lit, with the mask as its hue shift mask, and
+the build drives its `_HueShift` and `_EmissionHueShift` from the same
+curve, in radians. Where the PC material glows, the masked texels glow in
+the signature colour there: that shader takes a glow's colour from a
+texture of its own, so the glow mask is given to it as that texture and
+the painted colour as its tint, and all of the glow is one shade. A
+material without a mask keeps the painted colour on mobile, and so does
+anything drawn by a shader of its own, which mobile does not have.
+
+Seen in the editor's pictures on a PC build and on a mobile one, which
+come out alike. Not seen in VRChat: how a synced float turns the hue for
+other people, who get it eight bits at a time and smoothed.
 
 ### The stencil bit
 
@@ -195,7 +256,9 @@ python tools/icons.py          # SVG -> PNG through Inkscape
 python tools/sfx.py            # synthesises Sounds/*.wav
 ```
 
-then `Tools > Wirenook > Assets > Rebuild Materials` in Unity. The tools
+then `Tools > Wirenook > Assets > Rebuild Materials` in Unity, and
+`Rebuild Signature` beside it for the signature colour's prefab and
+controller. The tools
 need Python 3.11+, Pillow and numpy; `icons.py` needs Inkscape on the PATH.
 
 The sounds are synthesised from sine partials and filtered noise by

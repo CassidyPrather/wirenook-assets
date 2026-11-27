@@ -46,6 +46,11 @@ namespace Wirenook.Assets.Editor
         private const string MobileToon = "VRChat/Mobile/Toon Lit";
         private const string MobileGlow = "VRChat/Mobile/Particles/Additive";
 
+        /// <summary>The one mobile shader that can turn the hue of a masked part of a texture (the signature colour).</summary>
+        private const string MobileHue = "VRChat/Mobile/Toon Standard";
+        private const string MobileHueKeyword = "USE_HUE_SHIFT";
+        private const string MobileHueRamp = "VRChat/ShadowRampToon2Band";
+
         protected override void Configure()
         {
             var beforeModularAvatar = InPhase(BuildPhase.Resolving).BeforePlugin(ModularAvatar);
@@ -201,6 +206,11 @@ namespace Wirenook.Assets.Editor
         /// the additive particle shader, each keeping its main texture. The
         /// replacements exist only in this build.
         ///
+        /// A solid surface with a mask for the signature colour
+        /// (<see cref="WirenookSignature"/>) becomes Toon Standard instead,
+        /// which has a masked hue shift of the same arithmetic, so the
+        /// wearer's colour reaches Android and iOS too.
+        ///
         /// None of those shaders can discard UV tiles, so whatever a material
         /// hides at rest is cut out of the mesh instead (by Avatar Optimizer,
         /// when it is installed) and stays that way: toggles that work by
@@ -225,7 +235,12 @@ namespace Wirenook.Assets.Editor
                     if (!replaced.TryGetValue(source, out var mobile))
                     {
                         var transparent = source.renderQueue >= (int)UnityEngine.Rendering.RenderQueue.Transparent;
-                        mobile = new Material(transparent ? glow : toon) { name = source.name };
+                        var painted = !transparent && source.HasProperty(WirenookSignature.Mask)
+                            ? source.GetTexture(WirenookSignature.Mask)
+                            : null;
+                        mobile = painted != null
+                            ? FollowingTheSignature(source, painted)
+                            : new Material(transparent ? glow : toon) { name = source.name };
                         if (source.HasProperty("_MainTex"))
                         {
                             mobile.mainTexture = source.GetTexture("_MainTex");
@@ -241,6 +256,51 @@ namespace Wirenook.Assets.Editor
 
                 renderer.sharedMaterials = materials;
             }
+        }
+
+        /// <summary>
+        /// A Toon Standard material that turns the hue of the texels
+        /// <paramref name="painted"/> is white on, as the PC shader does for
+        /// <see cref="WirenookSignature.Property"/>. The caller gives it the
+        /// main texture. Where the source glows, the masked texels glow in
+        /// the signature colour: this shader takes a glow's colour from a
+        /// texture of its own and not from the surface, and the glow mask
+        /// lies inside the signature's by the convention.
+        /// </summary>
+        private static Material FollowingTheSignature(Material source, Texture painted)
+        {
+            var shader = Shader.Find(MobileHue);
+            if (shader == null) throw new InvalidOperationException("The VRChat SDK's mobile shader " + MobileHue + " is missing.");
+            var mobile = new Material(shader) { name = source.name };
+            var ramp = Resources.Load<Texture2D>(MobileHueRamp);
+            if (ramp != null) mobile.SetTexture("_Ramp", ramp);
+            if (source.HasProperty("_Cull")) mobile.SetFloat("_Culling", source.GetFloat("_Cull"));
+
+            var turn = source.GetFloat(WirenookSignature.Property) * Core.SignatureColour.FullTurn;
+            mobile.EnableKeyword(MobileHueKeyword);
+            mobile.SetTexture("_HueShiftMask", painted);
+            // The mask is white or black; any channel but alpha will do.
+            mobile.SetFloat("_HueShiftMaskChannel", 0f);
+            mobile.SetFloat("_HueShift", turn);
+            mobile.SetFloat("_EmissionHueShift", turn);
+
+            var glow = source.HasProperty("_UseEmission") && source.GetFloat("_UseEmission") > 0.5f && source.HasProperty("_EmissionMap")
+                ? source.GetTexture("_EmissionMap")
+                : null;
+            if (glow != null)
+            {
+                mobile.SetTexture("_EmissionMap", glow);
+                mobile.SetColor("_EmissionColor", WirenookSignature.Colour(0f));
+                mobile.SetFloat("_EmissionStrength", 1f);
+            }
+
+            return mobile;
+        }
+
+        /// <summary>Whether a material is one <see cref="FollowingTheSignature"/> made.</summary>
+        private static bool FollowsTheSignature(Material material)
+        {
+            return material != null && material.shader.name == MobileHue && material.IsKeywordEnabled(MobileHueKeyword);
         }
 
         /// <summary>
@@ -346,13 +406,17 @@ namespace Wirenook.Assets.Editor
         /// a drop-in prefab can change how the whole avatar is drawn without
         /// knowing its renderers. Each renderer is given the same curves,
         /// which also keeps them alike for an optimiser that merges meshes.
+        /// Every kind of renderer is given them: a trail or a particle
+        /// system whose material has the property follows it too.
+        ///
+        /// The signature colour (<see cref="WirenookSignature.Property"/>)
+        /// is also given to the mobile materials that stand in for it, as
+        /// the hue shift they have: the same amount, in radians.
         /// </summary>
         private static void SpreadAvatarMaterials(GameObject avatar, AnimatorServicesContext animators)
         {
             const string prefix = "material.";
-            var renderers = avatar.GetComponentsInChildren<Renderer>(true)
-                .Where(renderer => renderer is SkinnedMeshRenderer || renderer is MeshRenderer)
-                .ToList();
+            var renderers = avatar.GetComponentsInChildren<Renderer>(true).ToList();
 
             foreach (var standIn in avatar.GetComponentsInChildren<WirenookAvatarMaterials>(true))
             {
@@ -367,15 +431,38 @@ namespace Wirenook.Assets.Editor
 
                         // "material._Colour.r" animates one part of the property "_Colour".
                         var property = binding.propertyName.Substring(prefix.Length).Split('.')[0];
+                        AnimationCurve radians = null;
                         foreach (var renderer in renderers)
                         {
-                            if (!renderer.sharedMaterials.Any(material => material != null && material.HasProperty(property))) continue;
-                            clip.SetFloatCurve(animators.ObjectPathRemapper.GetVirtualPathForObject(renderer.gameObject),
-                                renderer.GetType(), binding.propertyName, curve);
+                            var rendererPath = animators.ObjectPathRemapper.GetVirtualPathForObject(renderer.gameObject);
+                            if (renderer.sharedMaterials.Any(material => material != null && material.HasProperty(property)))
+                            {
+                                clip.SetFloatCurve(rendererPath, renderer.GetType(), binding.propertyName, curve);
+                            }
+                            else if (property == WirenookSignature.Property && renderer.sharedMaterials.Any(FollowsTheSignature))
+                            {
+                                radians = radians ?? Scaled(curve, Core.SignatureColour.FullTurn);
+                                clip.SetFloatCurve(rendererPath, renderer.GetType(), prefix + "_HueShift", radians);
+                                clip.SetFloatCurve(rendererPath, renderer.GetType(), prefix + "_EmissionHueShift", radians);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        /// <summary>The same curve with every value, and so every slope, multiplied.</summary>
+        private static AnimationCurve Scaled(AnimationCurve curve, float by)
+        {
+            var keys = curve.keys;
+            for (var i = 0; i < keys.Length; i++)
+            {
+                keys[i].value *= by;
+                keys[i].inTangent *= by;
+                keys[i].outTangent *= by;
+            }
+
+            return new AnimationCurve(keys) { preWrapMode = curve.preWrapMode, postWrapMode = curve.postWrapMode };
         }
 
         private static void Join(AnimatorServicesContext animators, Joining joining)
