@@ -292,7 +292,7 @@ does that.
 ```bash
 python tools/palette.py Packages/net.wirenook.assets/Textures/wirenook-palette.toml
 python tools/icons.py          # SVG -> PNG through Inkscape
-python tools/sfx.py            # synthesises Sounds/*.wav
+python tools/sfx.py            # writes Sounds/*.wav
 ```
 
 then `Tools > Wirenook > Assets > Rebuild Materials` in Unity, and
@@ -300,8 +300,15 @@ then `Tools > Wirenook > Assets > Rebuild Materials` in Unity, and
 controller. The tools
 need Python 3.11+, Pillow and numpy; `icons.py` needs Inkscape on the PATH.
 
-The sounds are synthesised from sine partials and filtered noise by
-`tools/sfx.py`; nothing is sampled.
+Most of the sounds are synthesised from sine partials and filtered noise
+by `tools/sfx.py`. Five that a synthesiser does badly are cut from CC0
+recordings instead, by the same tool: `dice` (dice shaken and thrown),
+`plank` (a plank struck), `thud` (a pick on rock), `rattle` (two metal
+clicks) and `unlock` (a latch, then a hinge). The recordings are in
+`tools/recorded/`, decoded to WAV and otherwise as published;
+[CREDITS.md](CREDITS.md) says where each came from. To take another sound
+from a recording, put the file there, write its function with `recording`
+and `lay`, add its name to `RECORDED`, and credit it. Only CC0 goes in.
 
 ### How loud the sounds are
 
@@ -318,6 +325,14 @@ VRChat runs avatar audio through a compressor and
 files normalised to between -6 and -12 dB. The click is too short to reach
 the shared loudness under that ceiling and is about 3 dB quieter. The tool
 prints the loudness and peak of each file it writes.
+
+A recorded sound's peaks stand much higher over its body than a
+synthesised one's, so the same ceiling would leave it far quieter than
+the rest. The five recorded sounds are let 6 dB over the ceiling and a
+limiter then turns the wave down around each peak (over 2 ms before it
+and 30 ms after), which is not clipping. They still come out 2 to 7 dB
+under the shared loudness on the measure above, and none is louder than
+the synthesised sound it took the place of.
 
 `WirenookSounds` then plays them at full volume through a VRC Spatial Audio
 Source with 6 dB of gain, heard out to 12 m. VRChat allows an avatar 10 dB

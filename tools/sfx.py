@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Synthesises the shared sound effects, so they are original and reproducible.
+"""Makes the shared sound effects, reproducibly.
 
-    tools/sfx.py            # writes Packages/net.wirenook.assets/Sounds/*.wav
+    tools/sfx.py                    # writes Packages/net.wirenook.assets/Sounds/*.wav
+    tools/sfx.py --out DIR [name...]  # writes there instead, all of them or the ones named
 
-Every sound is built from sine partials and filtered noise here rather than
-taken from a sample library, which keeps the package free of third-party
-audio and its licences. Mono, 44.1 kHz, 16-bit, each under a second: these
-play from an avatar, where short is polite.
+Most sounds are built from sine partials and filtered noise here. A few
+that a synthesiser does badly (dice, wood, stone, a lock) are cut from
+CC0 recordings kept in tools/recorded/, each credited in CREDITS.md; see
+RECORDED. Mono, 44.1 kHz, 16-bit, each about a second or less: these play
+from an avatar, where short is polite.
 
 Every sound is written at the same loudness (see LOUDNESS), so features can
 all play them at one volume and none drowns another. How loud they are in
@@ -20,6 +22,19 @@ import numpy as np
 
 RATE = 44100
 OUT = pathlib.Path(__file__).resolve().parents[1] / "Packages" / "net.wirenook.assets" / "Sounds"
+
+# Recordings the sounds in RECORDED are cut from: mono, 44.1 kHz, 16-bit, as
+# their authors published them apart from the decoding. CC0, every one;
+# CREDITS.md says where each came from.
+SOURCES = pathlib.Path(__file__).resolve().parent / "recorded"
+
+# Sounds cut from recordings, not synthesised. A recording's peaks stand
+# far higher over its body than a synthesised sound's, so under the PEAK
+# ceiling alone these would come out much quieter than the rest; they are
+# let up to HEADROOM dB over it first and a limiter then holds the peaks
+# down to it (see `limit`). They still never come out over LOUDNESS.
+RECORDED = {"dice", "plank", "thud", "rattle", "unlock"}
+HEADROOM = 6.0
 
 # The loudness every sound is brought to, in dB relative to full scale: the
 # level of its loudest 200 ms after K-weighting (the ITU-R BS.1770 filter,
@@ -41,6 +56,28 @@ LOOPS = {"buzz", "hum"}
 # -12 dB to stay clear of it. A sound too short and sharp to reach LOUDNESS
 # under this ceiling (the click) is left quieter instead.
 PEAK = -6.0
+
+
+def recording(name, start=0.0, end=None, fade=0.03):
+    """A stretch of one of the recordings in tools/recorded/, in seconds from its start, faded out at its end."""
+    with wave.open(str(SOURCES / f"{name}.wav"), "rb") as source:
+        if (source.getnchannels(), source.getsampwidth(), source.getframerate()) != (1, 2, RATE):
+            raise ValueError(f"{name}.wav is not mono 16-bit at {RATE} Hz")
+        data = np.frombuffer(source.readframes(source.getnframes()), dtype="<i2") / 32768.0
+    cut = data[int(RATE * start) : None if end is None else int(RATE * end)].copy()
+    tail = min(len(cut), int(RATE * fade))
+    cut[len(cut) - tail :] *= np.linspace(1, 0, tail) ** 2
+    return cut
+
+
+def lay(seconds, *parts):
+    """Recordings laid over one another: each part is (signal, the second it starts at, level)."""
+    mix = np.zeros(int(RATE * seconds))
+    for signal, at, level in parts:
+        start = int(RATE * at)
+        signal = signal[: len(mix) - start]
+        mix[start : start + len(signal)] += signal * level
+    return mix
 
 
 def tone(frequency, seconds, phase=0.0):
@@ -323,18 +360,12 @@ def nom():
 
 
 def dice():
-    """Dice rattling to a stop: wooden knocks that come closer together and then settle."""
-    seconds = 0.62
-    mix = np.zeros(int(RATE * seconds))
-    start = 0.0
-    for index, (gap, pitch) in enumerate(((0.11, 760), (0.1, 640), (0.085, 820), (0.07, 700), (0.06, 900), (0.05, 620))):
-        length = 0.07
-        knock = tone(sweep(pitch, pitch * 0.6, length), length) * envelope(length, 0.001, 0.06, 3)
-        clack = lowpass(noise(length, 20 + index), 3500) * envelope(length, 0.0005, 0.03, 3)
-        at = int(RATE * start)
-        mix[at : at + len(knock)] += (knock * 0.7 + clack) * (1.0 - 0.09 * index)
-        start += gap
-    return mix / np.max(np.abs(mix)) * 0.8
+    """Dice shaken in the hand and thrown down: a recording of each, the shake running into the throw."""
+    shake = recording("dice-shake-2", 0.25, 0.62, fade=0.06)
+    shake[: int(RATE * 0.02)] *= np.linspace(0, 1, int(RATE * 0.02))
+    throw = recording("dice-throw-3", 0.03, 0.56, fade=0.12)
+    # The shake is the quieter half: the throw is what the cue is for.
+    return lay(0.87, (shake, 0.0, 0.4), (throw, 0.34, 1.0))
 
 
 def _steps(notes, seconds):
@@ -373,52 +404,25 @@ def hum():
 
 
 def rattle():
-    """A lock shaken on its hasp and holding: four short metal knocks."""
-    seconds = 0.5
-    mix = np.zeros(int(RATE * seconds))
-    for index, (delay, pitch) in enumerate(((0.0, 1900.0), (0.07, 2300.0), (0.16, 1750.0), (0.24, 2100.0))):
-        length = 0.12
-        knock = (tone(pitch, length) * 0.6 + tone(pitch * 1.52, length) * 0.3 + lowpass(noise(length, 40 + index), 5000) * 0.5)
-        knock = knock * envelope(length, 0.001, 0.1, 4)
-        start = int(RATE * delay)
-        mix[start:start + len(knock)] += knock
-    return mix / np.max(np.abs(mix)) * 0.7
+    """A lock shaken on its hasp and holding: a recording of two metal clicks."""
+    return recording("metalClick", 0.06, 0.42, fade=0.05)
 
 
 def unlock():
-    """A key turning and a shackle springing open: a clunk, then a bright ring."""
-    seconds = 0.6
-    clunk = tone(sweep(240, 110, 0.12), 0.12) * envelope(0.12, 0.001, 0.1, 3)
-    tick = lowpass(noise(0.05, 44), 4000) * envelope(0.05, 0.001, 0.04, 3)
-    ring = (tone(1320.0, 0.45) + tone(1980.0, 0.45) * 0.5 + tone(2640.0, 0.45) * 0.25) * envelope(0.45, 0.002, 0.42, 2.5)
-    mix = np.zeros(int(RATE * seconds))
-    mix[: len(clunk)] += clunk
-    mix[: len(tick)] += tick * 0.6
-    start = int(RATE * 0.13)
-    mix[start:start + len(ring)] += ring * 0.6
-    return mix / np.max(np.abs(mix)) * 0.75
+    """A lock springing open and a lid lifting: a recorded latch, then a recorded hinge."""
+    latch = recording("metalLatch", 0.0, 0.2, fade=0.05)
+    hinge = recording("creak3", 0.03, 0.33, fade=0.06)
+    return lay(0.5, (latch, 0.0, 1.0), (hinge, 0.17, 0.45))
 
 
 def thud():
-    """Something heavy coming down on the ground: a deep, soft blow with no edge to it."""
-    seconds = 0.6
-    body = tone(sweep(95, 38, seconds), seconds) * envelope(seconds, 0.008, 0.5, 2.5)
-    air = lowpass(noise(seconds, 47), 300) * envelope(seconds, 0.01, 0.35, 3)
-    mix = body + air * 0.8
-    return mix / np.max(np.abs(mix)) * 0.8
+    """Something heavy coming up through the ground: a recording of a pick striking rock."""
+    return recording("impactMining_000", 0.0, 0.6, fade=0.12)
 
 
 def plank():
-    """A board coming off and landing: a dry wooden clack and a second, lower one."""
-    seconds = 0.45
-    mix = np.zeros(int(RATE * seconds))
-    for index, (delay, pitch, level) in enumerate(((0.0, 620.0, 1.0), (0.17, 430.0, 0.7))):
-        length = 0.2
-        wood = tone(pitch, length) + tone(pitch * 2.76, length) * 0.4 + tone(pitch * 5.4, length) * 0.15
-        knock = wood * envelope(length, 0.001, 0.14, 4) + lowpass(noise(length, 50 + index), 2500) * envelope(length, 0.001, 0.04, 3) * 0.6
-        start = int(RATE * delay)
-        mix[start:start + len(knock)] += knock * level
-    return mix / np.max(np.abs(mix)) * 0.75
+    """A board coming off and landing: a recording of a plank struck."""
+    return recording("impactPlank_medium_003", 0.0, 0.3, fade=0.1)
 
 
 def seal():
@@ -521,6 +525,29 @@ def peak(signal):
     return 20 * np.log10(max(np.max(np.abs(signal)), 1e-12))
 
 
+def limit(signal, ceiling):
+    """Holds a signal's peaks down to `ceiling` (linear), leaving the rest as it is.
+
+    A gain that follows the signal: where a peak would go over, the gain
+    has come down over the 2 ms before it and comes back over the 30 ms
+    after it, so the wave is turned down around the peak, not clipped.
+    """
+    wanted = np.minimum(1.0, ceiling / np.maximum(np.abs(signal), 1e-9))
+    ahead = int(RATE * 0.002)
+    padded = np.concatenate([wanted, np.ones(ahead)])
+    held = np.min(np.lib.stride_tricks.sliding_window_view(padded, ahead + 1), axis=1)
+    release = np.exp(-1.0 / (RATE * 0.03))
+    eased = np.empty_like(held)
+    value = 1.0
+    for index, target in enumerate(held):
+        value = min(target, 1.0 - (1.0 - value) * release)
+        eased[index] = value
+    # Averaged over the same 2 ms, the gain comes down as a ramp and is still low enough at the peak.
+    padded = np.concatenate([np.ones(ahead), eased])
+    gain = np.mean(np.lib.stride_tricks.sliding_window_view(padded, ahead + 1), axis=1)
+    return signal * gain
+
+
 def finish(name, signal):
     """Fades the ends and brings the sound to the shared loudness."""
     # A few milliseconds of fade at both ends guarantees no click at the cut.
@@ -530,7 +557,11 @@ def finish(name, signal):
         signal[:edge] *= np.linspace(0, 1, edge)
         signal[-edge:] *= np.linspace(1, 0, edge)
 
-    gain = min(LOUDNESS + TRIM.get(name, 0.0) - loudness(signal), PEAK - peak(signal))
+    wanted = LOUDNESS + TRIM.get(name, 0.0) - loudness(signal)
+    if name in RECORDED:
+        gain = min(wanted, PEAK - peak(signal) + HEADROOM)
+        return limit(signal * 10 ** (gain / 20), 10 ** (PEAK / 20))
+    gain = min(wanted, PEAK - peak(signal))
     return signal * 10 ** (gain / 20)
 
 
@@ -547,5 +578,12 @@ def write(name, signal):
 
 
 if __name__ == "__main__":
+    import sys
+
+    arguments = sys.argv[1:]
+    if arguments[:1] == ["--out"]:
+        OUT = pathlib.Path(arguments[1])
+        arguments = arguments[2:]
     for sound_name, build in SOUNDS.items():
-        write(sound_name, finish(sound_name, build()))
+        if not arguments or sound_name in arguments:
+            write(sound_name, finish(sound_name, build()))
