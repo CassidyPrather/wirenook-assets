@@ -165,4 +165,33 @@ void wirenookScreen(inout float3 colour, float2 place, float2 uv1)
     colour = lerp(colour, screen, saturate(_WirenookScreen));
 }
 
+// A spectre. Whatever the surface was, it is now light of the signature
+// colour: a faint fill, bright where the surface turns away from the eye,
+// in bands that climb. The fragment is thrown away on every other pixel
+// where that light is weak, which is all the transparency an opaque pass
+// has, and kept everywhere at the silhouette, so the outline stays whole.
+void wirenookSpectral(inout float3 colour, float3 positionWS, float3 normalWS)
+{
+    if (_WirenookSpectral <= 0.0) return;
+
+    float3 toEye = normalize(_WorldSpaceCameraPos - positionWS);
+    // A pass that was not given a normal faces the eye everywhere.
+    float facing = dot(normalWS, normalWS) > 0.0 ? saturate(abs(dot(normalize(normalWS), toEye))) : 1.0;
+    float rim = pow(1.0 - facing, 2.2) * 1.25;
+
+    // Nine bands to the metre, climbing twelve centimetres a second.
+    float along = frac(positionWS.y * 9.0 - _Time.y * 1.08);
+    float band = 1.0 - 0.45 * smoothstep(0.25, 0.5, abs(along - 0.5));
+    float light = (0.22 + rim) * band;
+
+    // Where this fragment is on the screen, in pixels, from its place in
+    // the world: the same for both eyes' passes and for a mirror's.
+    float4 projected = mul(UNITY_MATRIX_VP, float4(positionWS, 1.0));
+    float2 pixel = floor((projected.xy / projected.w * 0.5 + 0.5) * _ScreenParams.xy);
+    float odd = fmod(abs(pixel.x + pixel.y), 2.0);
+    if (_WirenookSpectral > 0.5 && odd > 0.5 && light < 0.6) discard;
+
+    colour = lerp(colour, wirenookSignatureColour(_WirenookSignature) * light * 1.6, saturate(_WirenookSpectral));
+}
+
 #endif

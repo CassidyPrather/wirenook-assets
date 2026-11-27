@@ -29,5 +29,37 @@ namespace Wirenook.Assets.Editor
         /// and finds it at nought wherever nothing naps.
         /// </summary>
         public const string Asleep = "WN/Asleep";
+
+        /// <summary>
+        /// The wearer has switched themself invisible, from the menu: a
+        /// synced bool. The switch itself (net.wirenook.adventure-tools)
+        /// stops every renderer drawing for everyone else. A feature with
+        /// something that shows and is not a renderer (a light) reads this
+        /// and puts it out, for everyone but the wearer.
+        /// </summary>
+        public const string Unseen = "WN/Unseen";
+
+        /// <summary>
+        /// Above a half on a client where the avatar is not to be drawn at
+        /// all. A feature that decides who sees the wearer viewer by viewer
+        /// writes it from an animation, on every client for itself; the
+        /// invisible switch obeys it. In no expression parameter list.
+        /// </summary>
+        public const string Hidden = "WN/Hidden";
+
+        /// <summary>
+        /// Above a half on a client where the wearer is drawn as a spectre:
+        /// seen by people who are let behind the scenes, and by the wearer,
+        /// while everyone else sees nothing. Written like <see cref="Hidden"/>.
+        /// </summary>
+        public const string Spectral = "WN/Spectral";
+
+        /// <summary>
+        /// Above a half on a client where the wearer is not to be heard:
+        /// their humanoid head bone, which VRChat puts the voice and the
+        /// nameplate at, has been moved out of earshot there. Written like
+        /// <see cref="Hidden"/>.
+        /// </summary>
+        public const string Muted = "WN/Muted";
     }
 }

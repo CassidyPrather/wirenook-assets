@@ -323,6 +323,19 @@ namespace Wirenook.Assets.Editor
             return PathTo(root, standIn.transform);
         }
 
+        /// <summary>
+        /// The feature's stand-in for every renderer on the avatar, whatever
+        /// its materials (see <see cref="WirenookAvatarRenderers"/>), created
+        /// if missing. Animate <c>m_Enabled</c>, the first material slot or a
+        /// material property at <see cref="PathTo(GameObject, Transform)"/>
+        /// of it, bound to <c>SkinnedMeshRenderer</c>, in a controller merged
+        /// from <paramref name="root"/>.
+        /// </summary>
+        public static WirenookAvatarRenderers AvatarRenderers(GameObject root)
+        {
+            return Ensure<WirenookAvatarRenderers>(Child(root, "Avatar Renderers"));
+        }
+
         /// <summary>Moves this object under a humanoid bone at build time, keeping its local pose.</summary>
         public static void AttachToBone(GameObject target, HumanBodyBones bone)
         {

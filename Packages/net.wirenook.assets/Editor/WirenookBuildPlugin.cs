@@ -70,6 +70,10 @@ namespace Wirenook.Assets.Editor
             // Modular Avatar merges what this makes, and renumbers the layers
             // its behaviours name; after the mobile cut, so that a prop left
             // out of a mobile build closes no hand there.
+            // Before Modular Avatar resolves a bone proxy or an optimiser reads a constraint.
+            beforeModularAvatar.Run("Attach head props to the head people see", context => WirenookRenderers.HeadProps(context.AvatarRootObject));
+            beforeModularAvatar.Run("Aim constraints at the bones they move", context => WirenookRenderers.AimAtBones(context.AvatarRootObject));
+
             beforeModularAvatar.Run("Close hands round what they hold", context => HandPoses.Build(context.AvatarRootObject));
 
             // Features are found by walking down from their marker, so this
@@ -121,6 +125,11 @@ namespace Wirenook.Assets.Editor
                     Join(context.Extension<AnimatorServicesContext>(), joining);
                 });
             });
+
+            // After the join, and so with every renderer as the optimiser will find it.
+            afterModularAvatar.WithRequiredExtension(typeof(AnimatorServicesContext), sequence =>
+                sequence.Run("Give avatar-wide renderer animation to every renderer", context =>
+                    WirenookRenderers.Spread(context.AvatarRootObject, context.Extension<AnimatorServicesContext>())));
 
             afterModularAvatar.Run("Remove editor-only markers", context =>
             {

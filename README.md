@@ -73,6 +73,27 @@ with nothing to atlas.
   animated on it are given, at build time, to each renderer that has a
   material with the property, so a drop-in prefab can change how the whole
   avatar is drawn without knowing its renderers.
+- **`FeaturePrefab.AvatarRenderers`** gives a feature the blunter
+  stand-in (`WirenookAvatarRenderers`): whatever is animated on it is
+  given to every renderer on the avatar, whatever its materials. Whether
+  a renderer is enabled (the invisible switch of
+  `net.wirenook.adventure-tools` is the one feature that animates that),
+  a material for every slot, and material properties. An optimiser will
+  not merge meshes whose materials are animated, so a stand-in can mark
+  its material swaps as for Android and iOS only, where no shader can be
+  made to look like something else by a property; a PC build drops them.
+  It can also leave the whole avatar undrawn as it rests, for one that
+  is hidden from most people (`restHidden`); `WirenookRenderers.DrawAtRest`
+  undoes that on a built copy, for a picture.
+- **`WirenookFreeHead`** on an avatar's root says its humanoid head bone
+  carries nothing, and names the bone that carries the head people see.
+  The build then sends everything features attach to the head (Modular
+  Avatar bone proxies) to that bone. **`WirenookBoneTarget`** beside a
+  VRChat constraint points it at one of the avatar's humanoid bones at
+  build time, which a drop-in prefab cannot do for itself; one that
+  would move the head of a rig without the mark is left out, with a
+  warning. Together they are how a feature moves a wearer's voice
+  (VRChat puts it at the head bone) without moving their head.
 - **`WirenookSignature`** is the signature colour: the parameter, the
   material property, the mask and the layer. See
   [The signature colour](#the-signature-colour).
@@ -91,7 +112,10 @@ with nothing to atlas.
   which one it wants, with a second choice for Android and iOS, and the
   build then leaves the others out with their parameters kept.
 - **`WirenookSignals`** names the animator parameters that mean the same
-  thing in every package (`WN/Away`).
+  thing in every package: `WN/Away`; `WN/Unseen`, the invisible switch;
+  and `WN/Hidden`, `WN/Spectral` and `WN/Muted`, which a feature that
+  decides who sees and hears the wearer writes on each viewer's client
+  for itself.
 - **`HandGrip`** fits hand-held props to an avatar from its finger bones.
 - **`HandPoses`** closes a hand round what it holds. A feature marks its
   grip (`WirenookHandGrip`) with when the prop is in the hand (`held`: a
@@ -150,6 +174,12 @@ unchanged. Three properties are added, all resting at nothing:
 - **`_WirenookSignature`** (0 to 1) turns the hue of the texels
   `_WirenookSignatureMask` is white on: the colour the wearer chose.
   See [The signature colour](#the-signature-colour).
+- **`_WirenookSpectral`** (0 to 1) draws the surface as a spectre: light
+  in the signature colour, brightest at the silhouette, in bands that
+  climb, with every other pixel left out away from the silhouette so
+  that what is behind shows through (the passes are opaque; nothing is
+  blended). What an avatar is drawn as for the few who may see it while
+  most cannot.
 - **`_WirenookSign`** and **`_WirenookSignShow`** unfold a sign
   (`SignMesh`): geometry whose vertices all rest at one pivot and carry
   their place on the sign in the third UV set, and in the fourth the

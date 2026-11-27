@@ -51,6 +51,8 @@ scripts/build-packages.sh      # VPM .zip + .unitypackage per package -> dist/
 ## House Rules
 
 - A colour the wearer chooses is the signature colour (`WirenookSignature`, README): paint in `#73f3ff` and its shades, mask the texels or declare `_WirenookSignature` in the shader, and the build drives it from `WN/Signature`. Never a second hue parameter, and never a renderer path: the stand-in spreads it.
+- Whether a renderer is enabled is animated in one place: the stand-in `WirenookAvatarRenderers`, by the invisible switch of net.wirenook.adventure-tools. Never animate `m_Enabled` on a renderer by path; show and hide by scale. A material swap through that stand-in is marked for mobile only unless the avatar can afford to lose its merged mesh on PC.
+- On a rig marked `WirenookFreeHead`, nothing may hang under the humanoid head bone or be weighted to it: features move it. Attach to the head by a Modular Avatar bone proxy with the Head bone reference, which the build redirects.
 - Every asset gets a `CREDITS.md` line at intake — source, author, license, URL. CC0 first.
 - Nothing proprietary and nothing licence-incompatible enters this repository; generate or draw it instead.
 - Unity editor stays on 2022.3.22f1, the version VRChat supports. Runtime Unity packages in `Packages/manifest.json` (Timeline, TextMeshPro, AI Navigation, uGUI) stay at the versions the VRChat client ships. Only editor-only tooling (IDE integrations, Test Framework) tracks the latest.

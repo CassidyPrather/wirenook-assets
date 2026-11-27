@@ -4,7 +4,7 @@
 // hooks do is in custom_insert.hlsl, which is included after lilToon's
 // common code, where Unity's variables and lilToon's helpers exist.
 //
-// Five things are added. Each rests at zero and then costs a comparison.
+// Six things are added. Each rests at zero and then costs a comparison.
 //
 // _WirenookGlitch (0..1). Corrupts the mesh: horizontal slices torn sideways,
 //   the whole surface snapped to a coarse grid in bursts, and a few vertices
@@ -57,6 +57,14 @@
 //   surface's own colour before anything is lit, so shading, and a glow that
 //   takes the surface's colour, follow. No mask, or no turn, costs nothing.
 //   Shaders/WirenookSignature.hlsl has the arithmetic, for other shaders.
+//
+// _WirenookSpectral (0..1). Draws the surface as a spectre: no longer lit or
+//   textured, but light in the signature colour, brightest at the silhouette,
+//   with bands climbing through it, and every other pixel left out away from
+//   the silhouette so that what is behind shows through. It is what someone
+//   is drawn as for the few who may see them while most people cannot
+//   (presence, in net.wirenook.adventure-tools). These passes are opaque, so
+//   the seeing through is done by leaving pixels out, not by blending.
 
 #define LIL_REQUIRE_APP_TEXCOORD1
 #define LIL_REQUIRE_APP_TEXCOORD2
@@ -75,7 +83,8 @@
     float _WirenookSignCShow; \
     float4 _WirenookParts; \
     float _WirenookPartsSway; \
-    float _WirenookSignature;
+    float _WirenookSignature; \
+    float _WirenookSpectral;
 
 #define LIL_CUSTOM_TEXTURES \
     TEXTURE2D(_WirenookSignatureMask);
@@ -90,4 +99,5 @@
 // lilToon's passes that shade a surface fill `fd`; the others (shadows,
 // depth) have no colour to replace.
 #define BEFORE_OUTPUT \
-    wirenookScreen(fd.col.rgb, fd.uv2, fd.uv1);
+    wirenookScreen(fd.col.rgb, fd.uv2, fd.uv1); \
+    wirenookSpectral(fd.col.rgb, fd.positionWS, fd.N);
