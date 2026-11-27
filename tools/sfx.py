@@ -322,6 +322,40 @@ def nom():
     return mix / np.max(np.abs(mix)) * 0.6
 
 
+def dice():
+    """Dice rattling to a stop: wooden knocks that come closer together and then settle."""
+    seconds = 0.62
+    mix = np.zeros(int(RATE * seconds))
+    start = 0.0
+    for index, (gap, pitch) in enumerate(((0.11, 760), (0.1, 640), (0.085, 820), (0.07, 700), (0.06, 900), (0.05, 620))):
+        length = 0.07
+        knock = tone(sweep(pitch, pitch * 0.6, length), length) * envelope(length, 0.001, 0.06, 3)
+        clack = lowpass(noise(length, 20 + index), 3500) * envelope(length, 0.0005, 0.03, 3)
+        at = int(RATE * start)
+        mix[at : at + len(knock)] += (knock * 0.7 + clack) * (1.0 - 0.09 * index)
+        start += gap
+    return mix / np.max(np.abs(mix)) * 0.8
+
+
+def _steps(notes, seconds):
+    """Device notes one after another, each given as (frequency, delay), mixed to one length."""
+    mix = np.zeros(int(RATE * seconds))
+    for frequency, delay in notes:
+        note = _device_note(frequency, delay, seconds)
+        mix[: len(note)] += note
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def pause():
+    """Three notes stepping down and slowing: everything holds still."""
+    return _steps(((659.25, 0.0), (523.25, 0.14), (392.0, 0.32)), 0.75)
+
+
+def resume():
+    """The same three notes stepping up and quickening: on we go."""
+    return _steps(((392.0, 0.0), (523.25, 0.14), (659.25, 0.25)), 0.6)
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "crackle": crackle,
@@ -343,6 +377,9 @@ SOUNDS = {
     "splash": splash,
     "whoosh": whoosh,
     "boing": boing,
+    "dice": dice,
+    "pause": pause,
+    "resume": resume,
 }
 
 

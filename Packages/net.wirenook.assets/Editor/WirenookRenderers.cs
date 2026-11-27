@@ -90,10 +90,19 @@ namespace Wirenook.Assets.Editor
         /// </summary>
         public static void Spread(GameObject avatar, AnimatorServicesContext animators)
         {
+            // The marks are taken off before the build is done; a check that
+            // runs afterwards asks here which renderers carried one.
+            StandingApart[avatar.GetInstanceID()] = avatar.GetComponentsInChildren<WirenookApart>(true)
+                .Select(mark => mark.GetComponent<Renderer>())
+                .Where(renderer => renderer != null)
+                .ToList();
+
             var standIns = avatar.GetComponentsInChildren<WirenookAvatarRenderers>(true);
             if (standIns.Length == 0) return;
 
+            // Not the ones that stand apart from the figure: those are their feature's to show and hide.
             var renderers = avatar.GetComponentsInChildren<Renderer>(true)
+                .Where(renderer => renderer.GetComponent<WirenookApart>() == null)
                 .Select(renderer => (renderer, path: animators.ObjectPathRemapper.GetVirtualPathForObject(renderer.gameObject)))
                 .ToList();
 
@@ -138,6 +147,19 @@ namespace Wirenook.Assets.Editor
         }
 
         private static readonly HashSet<int> RestingHidden = new HashSet<int>();
+        private static readonly Dictionary<int, List<Renderer>> StandingApart = new Dictionary<int, List<Renderer>>();
+
+        /// <summary>
+        /// The renderers the last build of this avatar found marked
+        /// <see cref="WirenookApart"/>: not part of the wearer's figure, and
+        /// so left alone by whatever hides or redraws the whole avatar.
+        /// </summary>
+        public static IReadOnlyList<Renderer> Apart(GameObject avatar)
+        {
+            return StandingApart.TryGetValue(avatar.GetInstanceID(), out var apart)
+                ? apart.Where(renderer => renderer != null).ToList()
+                : new List<Renderer>();
+        }
 
         /// <summary>
         /// Draws again an avatar that its last build left undrawn at rest

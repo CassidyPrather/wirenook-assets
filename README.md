@@ -25,7 +25,7 @@ with nothing to atlas.
 | `Textures/` | `wirenook-palette.png`: the site's colours as a grid of solid swatches, with `wirenook-palette-emission.png` marking the row that glows and `wirenook-palette.json` mapping swatch names to UVs. Source: `wirenook-palette.toml`. |
 | `Materials/` | `wirenook` (opaque lilToon, palette-coloured, glow row emissive) and `wirenook-glow` (additive and unlit, for beams and halos). |
 | `Icons/` | 74 menu icons, 256 px, each an SVG with its PNG export. See `Icons/README.md`. |
-| `Sounds/` | Eighteen short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`, `nom`), all at one loudness, and two written to loop: `buzz`, a quiet hum, and `crackle`, a small fire. |
+| `Sounds/` | Twenty-one short effects (`pop-in`, `pop-out`, `click`, `chime`, `portal`, `megaphone`, `ping`, `bonk`, `poof`, `collect`, `unplug`, `plug`, `sizzle`, `frost`, `splash`, `whoosh`, `boing`, `nom`, `dice`, `pause`, `resume`), all at one loudness, and two written to loop: `buzz`, a quiet hum, and `crackle`, a small fire. |
 | `Shaders/Toon/` | `Wirenook/lilToon`: lilToon with three additions, as a lilToon custom shader. See [The shader](#the-shader). |
 | `Prefabs/` | `Wirenook Signature`: the dial for the colour its wearer chooses. See [The signature colour](#the-signature-colour). |
 | `Runtime/` | `WirenookFeature`, which marks and describes an optional avatar feature for upload tooling; `WirenookHandGrip`, which marks where a hand-held prop sits in a hand, when it is held and how the fingers close on it; and `WirenookHandClaim`, by which a feature says it uses a hand's gestures as buttons while one of its parameters is on, so that an avatar can keep its face still for that hand. All are editor-only and stripped from uploads. |
@@ -85,6 +85,15 @@ with nothing to atlas.
   It can also leave the whole avatar undrawn as it rests, for one that
   is hidden from most people (`restHidden`); `WirenookRenderers.DrawAtRest`
   undoes that on a built copy, for a picture.
+- **`WirenookApart`** on a renderer says it is not part of the wearer's
+  figure: something set down in the world, or shown to an audience of
+  its own. The blunter stand-in leaves it alone, so an invisible wearer
+  keeps what they have left standing (the zone markers of
+  `net.wirenook.adventure-tools`), and what it draws is then its
+  feature's own business. Material properties given through
+  `WirenookAvatarMaterials` (the signature colour) still reach it.
+  `WirenookRenderers.Apart` lists the ones the last build found, for a
+  check that runs after the marks are gone.
 - **`WirenookFreeHead`** on an avatar's root says its humanoid head bone
   carries nothing, and names the bone that carries the head people see.
   The build then sends everything features attach to the head (Modular

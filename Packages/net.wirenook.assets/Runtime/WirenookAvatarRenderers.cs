@@ -23,6 +23,9 @@ namespace Wirenook.Assets
     /// <see cref="WirenookAvatarMaterials"/> is the gentler stand-in, for a
     /// property that only the materials declaring it should be given.
     ///
+    /// A renderer marked <see cref="WirenookApart"/> is left out: it is not
+    /// part of the wearer's figure.
+    ///
     /// Nothing else may animate whether a renderer is enabled: a later
     /// layer would undo it for that renderer. Props are shown and hidden by
     /// scale.
