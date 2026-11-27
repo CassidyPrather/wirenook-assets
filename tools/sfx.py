@@ -30,11 +30,11 @@ OUT = pathlib.Path(__file__).resolve().parents[1] / "Packages" / "net.wirenook.a
 LOUDNESS = -17.0
 
 # Sounds that are meant to stand out from the rest, in dB over LOUDNESS.
-TRIM = {"megaphone": 2.0, "buzz": -10.0}
+TRIM = {"megaphone": 2.0, "buzz": -10.0, "hum": -8.0}
 
 # Sounds that play round and round. They are written so that the end runs
 # into the start, and are not faded at the ends.
-LOOPS = {"buzz"}
+LOOPS = {"buzz", "hum"}
 
 # No sample goes above this, in dB relative to full scale. VRChat runs avatar
 # audio through a compressor and advises files normalised to between -6 and
@@ -356,6 +356,85 @@ def resume():
     return _steps(((392.0, 0.0), (523.25, 0.14), (659.25, 0.25)), 0.6)
 
 
+def hum():
+    """A low drone with two voices a little apart, beating slowly: something open that should not be. Loops."""
+    seconds = 2.0
+    # Whole numbers of cycles in the two seconds, so the loop has no seam;
+    # voices half a hertz and a hertz apart beat once and twice in it.
+    voices = ((55.0, 1.0), (55.5, 0.8), (82.5, 0.45), (83.5, 0.35), (110.0, 0.2), (164.5, 0.12))
+    drone = sum(tone(frequency, seconds) * level for frequency, level in voices)
+    swell = 1 + 0.25 * tone(0.5, seconds)
+    overlap = int(RATE * 0.25)
+    breath = lowpass(noise(seconds + 0.25, 31), 500) * 1.5
+    breath[:overlap] = breath[:overlap] * np.linspace(0, 1, overlap) + breath[-overlap:] * np.linspace(1, 0, overlap)
+    breath = breath[: int(RATE * seconds)]
+    mix = drone * swell * 0.5 + breath * 0.3
+    return mix / np.max(np.abs(mix)) * 0.6
+
+
+def rattle():
+    """A lock shaken on its hasp and holding: four short metal knocks."""
+    seconds = 0.5
+    mix = np.zeros(int(RATE * seconds))
+    for index, (delay, pitch) in enumerate(((0.0, 1900.0), (0.07, 2300.0), (0.16, 1750.0), (0.24, 2100.0))):
+        length = 0.12
+        knock = (tone(pitch, length) * 0.6 + tone(pitch * 1.52, length) * 0.3 + lowpass(noise(length, 40 + index), 5000) * 0.5)
+        knock = knock * envelope(length, 0.001, 0.1, 4)
+        start = int(RATE * delay)
+        mix[start:start + len(knock)] += knock
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
+def unlock():
+    """A key turning and a shackle springing open: a clunk, then a bright ring."""
+    seconds = 0.6
+    clunk = tone(sweep(240, 110, 0.12), 0.12) * envelope(0.12, 0.001, 0.1, 3)
+    tick = lowpass(noise(0.05, 44), 4000) * envelope(0.05, 0.001, 0.04, 3)
+    ring = (tone(1320.0, 0.45) + tone(1980.0, 0.45) * 0.5 + tone(2640.0, 0.45) * 0.25) * envelope(0.45, 0.002, 0.42, 2.5)
+    mix = np.zeros(int(RATE * seconds))
+    mix[: len(clunk)] += clunk
+    mix[: len(tick)] += tick * 0.6
+    start = int(RATE * 0.13)
+    mix[start:start + len(ring)] += ring * 0.6
+    return mix / np.max(np.abs(mix)) * 0.75
+
+
+def thud():
+    """Something heavy coming down on the ground: a deep, soft blow with no edge to it."""
+    seconds = 0.6
+    body = tone(sweep(95, 38, seconds), seconds) * envelope(seconds, 0.008, 0.5, 2.5)
+    air = lowpass(noise(seconds, 47), 300) * envelope(seconds, 0.01, 0.35, 3)
+    mix = body + air * 0.8
+    return mix / np.max(np.abs(mix)) * 0.8
+
+
+def plank():
+    """A board coming off and landing: a dry wooden clack and a second, lower one."""
+    seconds = 0.45
+    mix = np.zeros(int(RATE * seconds))
+    for index, (delay, pitch, level) in enumerate(((0.0, 620.0, 1.0), (0.17, 430.0, 0.7))):
+        length = 0.2
+        wood = tone(pitch, length) + tone(pitch * 2.76, length) * 0.4 + tone(pitch * 5.4, length) * 0.15
+        knock = wood * envelope(length, 0.001, 0.14, 4) + lowpass(noise(length, 50 + index), 2500) * envelope(length, 0.001, 0.04, 3) * 0.6
+        start = int(RATE * delay)
+        mix[start:start + len(knock)] += knock * level
+    return mix / np.max(np.abs(mix)) * 0.75
+
+
+def seal():
+    """A tear in the air drawing shut: a falling sigh that ends on one soft, high note."""
+    seconds = 0.9
+    sigh = lowpass(noise(seconds, 53), 1200) * envelope(seconds, 0.05, 0.8, 2)
+    fall = tone(sweep(420, 90, seconds), seconds) * envelope(seconds, 0.03, 0.7, 2) * 0.6
+    note = np.zeros(int(RATE * seconds))
+    length = 0.4
+    chime_ = (tone(1568.0, length) + tone(2352.0, length) * 0.35) * envelope(length, 0.004, 0.38, 2.5)
+    start = int(RATE * 0.5)
+    note[start:start + len(chime_)] += chime_
+    mix = sigh * 0.8 + fall + note * 0.5
+    return mix / np.max(np.abs(mix)) * 0.7
+
+
 SOUNDS = {
     "pop-in": pop_in,
     "crackle": crackle,
@@ -380,6 +459,12 @@ SOUNDS = {
     "dice": dice,
     "pause": pause,
     "resume": resume,
+    "hum": hum,
+    "rattle": rattle,
+    "unlock": unlock,
+    "thud": thud,
+    "plank": plank,
+    "seal": seal,
 }
 
 
