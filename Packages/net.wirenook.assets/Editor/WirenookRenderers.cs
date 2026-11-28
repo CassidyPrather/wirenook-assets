@@ -112,6 +112,10 @@ namespace Wirenook.Assets.Editor
                 RestingHidden.Add(avatar.GetInstanceID());
             }
 
+            // Made after the list above was taken, so nothing below switches it off.
+            var awake = KeepAwake(avatar, renderers.Select(entry => entry.renderer).ToList());
+            if (awake != null) StandingApart[avatar.GetInstanceID()].Add(awake);
+
             foreach (var standIn in standIns)
             {
                 var path = animators.ObjectPathRemapper.GetVirtualPathForObject(standIn.gameObject);
@@ -144,6 +148,111 @@ namespace Wirenook.Assets.Editor
                     }
                 }
             }
+        }
+
+        /// <summary>The object of the renderer that is never switched off (<see cref="KeepAwake"/>).</summary>
+        public const string AwakeName = "Awake";
+
+        /// <summary>Where the mesh of that renderer is kept.</summary>
+        public const string AwakeMeshPath = "Packages/net.wirenook.assets/Generated/awake.asset";
+
+        /// <summary>
+        /// The mesh of the renderer that is never switched off: one triangle
+        /// a ten-thousandth of its box across, which no pixel is big enough
+        /// to show, in bounds that are a unit box. What sees a renderer goes
+        /// by its bounds.
+        /// </summary>
+        public static Mesh AwakeMesh()
+        {
+            return AssetFolders.LoadOrCreate(AwakeMeshPath, () =>
+            {
+                var mesh = new Mesh { name = "awake" };
+                mesh.vertices = new[] { Vector3.zero, new Vector3(0.0001f, 0f, 0f), new Vector3(0f, 0.0001f, 0f) };
+                mesh.normals = new[] { Vector3.back, Vector3.back, Vector3.back };
+                mesh.uv = new[] { Vector2.zero, Vector2.zero, Vector2.zero };
+                mesh.triangles = new[] { 0, 2, 1 };
+                mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
+                return mesh;
+            });
+        }
+
+        /// <summary>Where the mesh of that renderer is kept for Android and iOS builds.</summary>
+        public const string AwakeBareMeshPath = "Packages/net.wirenook.assets/Generated/awake-bare.asset";
+
+        /// <summary>
+        /// The same for Android and iOS: the three points and the unit box,
+        /// and no triangle at all, so that it has no part to give a material
+        /// to. VRChat counts a material slot for each part of a mesh.
+        /// </summary>
+        public static Mesh AwakeBareMesh()
+        {
+            return AssetFolders.LoadOrCreate(AwakeBareMeshPath, () =>
+            {
+                var mesh = new Mesh { name = "awake-bare" };
+                mesh.vertices = new[] { Vector3.zero, new Vector3(0.0001f, 0f, 0f), new Vector3(0f, 0.0001f, 0f) };
+                mesh.subMeshCount = 0;
+                mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
+                return mesh;
+            });
+        }
+
+        /// <summary>
+        /// Gives the avatar one renderer that nothing switches off and that
+        /// draws nothing, filling the space the figure takes up.
+        ///
+        /// VRChat does not run the animator of somebody else's avatar while
+        /// none of its renderers is in view, and a renderer that is switched
+        /// off is never in view. An animator that switches off every
+        /// renderer it has therefore stops, and cannot switch them on
+        /// again: the avatar stays undrawn on that client, whatever its
+        /// wearer does. With this the animator runs whenever the place
+        /// where the figure stands is in view.
+        /// </summary>
+        private static Renderer KeepAwake(GameObject avatar, IReadOnlyList<Renderer> figure)
+        {
+            var material = figure.SelectMany(renderer => renderer.sharedMaterials).FirstOrDefault(candidate => candidate != null);
+            if (material == null) return null;
+
+            var seen = false;
+            var space = new Bounds();
+            foreach (var renderer in figure)
+            {
+                var bounds = renderer.bounds;
+                if (bounds.size == Vector3.zero) continue;
+                if (seen) space.Encapsulate(bounds);
+                else space = bounds;
+                seen = true;
+            }
+
+            if (!seen) space = new Bounds(avatar.transform.position + Vector3.up, new Vector3(1f, 2f, 1f));
+
+            var existing = avatar.transform.Find(AwakeName);
+            var holder = existing != null ? existing.gameObject : new GameObject(AwakeName);
+            holder.layer = avatar.layer;
+            holder.transform.SetParent(avatar.transform, false);
+            holder.transform.localRotation = Quaternion.identity;
+            holder.transform.localPosition = avatar.transform.InverseTransformPoint(space.center);
+            var scale = avatar.transform.lossyScale;
+            holder.transform.localScale = new Vector3(
+                space.size.x / Mathf.Max(Mathf.Abs(scale.x), 0.0001f),
+                space.size.y / Mathf.Max(Mathf.Abs(scale.y), 0.0001f),
+                space.size.z / Mathf.Max(Mathf.Abs(scale.z), 0.0001f));
+
+            var filter = holder.GetComponent<MeshFilter>();
+            if (filter == null) filter = holder.AddComponent<MeshFilter>();
+            filter.sharedMesh = WirenookPlatform.IsMobile ? AwakeBareMesh() : AwakeMesh();
+            var drawn = holder.GetComponent<MeshRenderer>();
+            if (drawn == null) drawn = holder.AddComponent<MeshRenderer>();
+            // A material slot is what Android and iOS builds have least of: one more takes most
+            // of them down a rank. There the renderer has no slot at all; it is still a
+            // renderer with bounds, which is what being in view goes by.
+            drawn.sharedMaterials = WirenookPlatform.IsMobile ? new Material[0] : new[] { material };
+            drawn.enabled = true;
+            drawn.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            drawn.receiveShadows = false;
+            drawn.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            drawn.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+            return drawn;
         }
 
         private static readonly HashSet<int> RestingHidden = new HashSet<int>();

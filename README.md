@@ -85,6 +85,15 @@ with nothing to atlas.
   It can also leave the whole avatar undrawn as it rests, for one that
   is hidden from most people (`restHidden`); `WirenookRenderers.DrawAtRest`
   undoes that on a built copy, for a picture.
+  A build with a stand-in is also given one renderer that nothing
+  switches off, the size of the figure, which draws nothing (`Awake`,
+  from `WirenookRenderers.KeepAwake`). VRChat does not run somebody
+  else's animator while none of the avatar's renderers is in view, and a
+  renderer that is switched off never is: without it, an animator that
+  had switched every renderer off would stop there and never switch them
+  on again. On PC it is a triangle too small to see, with one material
+  slot; on Android and iOS, where a slot is a rank, a mesh with no
+  triangle and no slot. The second has not been confirmed in a headset.
 - **`WirenookApart`** on a renderer says it is not part of the wearer's
   figure: something set down in the world, or shown to an audience of
   its own. The blunter stand-in leaves it alone, so an invisible wearer
